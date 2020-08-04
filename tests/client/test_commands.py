@@ -68,6 +68,12 @@ class TestRedisCommands:
 
     @skip_if_server_version_lt('2.6.9')
     @pytest.mark.asyncio(forbid_global_loop=True)
+    async def test_client_getname_from_init(self, event_loop):
+        r = aredis.StrictRedis(client_name='test', loop=event_loop)
+        assert await r.client_getname() == 'test'
+
+    @skip_if_server_version_lt('2.6.9')
+    @pytest.mark.asyncio(forbid_global_loop=True)
     async def test_client_setname(self, r):
         assert await r.client_setname('redis_py_test')
         assert await r.client_getname() == 'redis_py_test'
