@@ -159,10 +159,14 @@ class StrictRedis(*mixins):
             # do not retry when coroutine is cancelled
             connection.disconnect()
             raise
-        except (ConnectionError, TimeoutError) as e:
+        except ConnectionError:
             connection.disconnect()
-            if not connection.retry_on_timeout and isinstance(e, TimeoutError):
+            raise
+        except TimeoutError:
+            connection.disconnect()
+            if not connection.retry_on_timeout:
                 raise
+
             await connection.send_command(*args)
             return await self.parse_response(connection, command_name, **options)
         finally:
