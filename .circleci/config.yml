@@ -53,7 +53,7 @@ workflows:
             parameters:
               hiredis: [false, true]
               python_version: ['3.5', '3.6', '3.7', '3.8']
-              redis_version: ['3', '4', '5']
+              redis_version: ['3', '4', '5', '6']
 
       - pytest-cluster:
           name: pytest-<<matrix.python_version>>-cluster-<<matrix.redis_version>>-hiredis-<<matrix.hiredis>>
@@ -63,4 +63,4 @@ workflows:
               hiredis: [false, true]
               python_version: ['3.5', '3.6', '3.7', '3.8']
               # TODO: pin to latest builds
-              redis_version: ['3.2.13', '4.0.14', '5.0.5']
+              redis_version: ['3.2.13', '4.0.14', '5.0.5', '6.0.12']

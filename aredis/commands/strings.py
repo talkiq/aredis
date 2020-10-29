@@ -236,13 +236,16 @@ class StringsCommandMixin:
             time_ms = (time_ms.seconds + time_ms.days * 24 * 3600) * 1000 + ms
         return await self.execute_command('PSETEX', name, time_ms, value)
 
-    async def set(self, name, value, ex=None, px=None, nx=False, xx=False):
+    async def set(self, name, value, ex=None, px=None, keepttl=False, nx=False, xx=False):
         """
         Set the value at key ``name`` to ``value``
 
         ``ex`` sets an expire flag on key ``name`` for ``ex`` seconds.
 
         ``px`` sets an expire flag on key ``name`` for ``px`` milliseconds.
+
+        ``keepttl`` if set to True, retain the time to live associated with the
+            key.
 
         ``nx`` if set to True, set the value at key ``name`` to ``value`` if it
             does not already exist.
@@ -263,6 +266,8 @@ class StringsCommandMixin:
                 px = (px.seconds + px.days * 24 * 3600) * 1000 + ms
             pieces.append(px)
 
+        if keepttl:
+            pieces.append('KEEPTTL')
         if nx:
             pieces.append('NX')
         if xx:
