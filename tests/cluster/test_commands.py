@@ -385,9 +385,26 @@ class TestRedisCommands:
         assert await r.mget('a', 'other', 'b', 'c') == [b('1'), None, b('2'), b('3')]
 
     @pytest.mark.asyncio
+    async def test_mget_hash_tags(self, r):
+        await r.flushdb()
+        assert await r.mget(['a{foo}', 'b{foo}']) == [None, None]
+        await r.set('a{foo}', 1)
+        await r.set('b{foo}', 2)
+        await r.set('c{bar}', 3)
+        assert await r.mget('a{foo}', 'other', 'b{foo}', 'c{bar}') == [b('1'), None, b('2'), b('3')]
+
+    @pytest.mark.asyncio
     async def test_mset(self, r):
         await r.flushdb()
         d = {'a': b('1'), 'b': b('2'), 'c': b('3')}
+        assert await r.mset(d)
+        for k, v in iteritems(d):
+            assert await r.mget(k) == [v]
+
+    @pytest.mark.asyncio
+    async def test_mset_hash_tags(self, r):
+        await r.flushdb()
+        d = {'a{foo}': b('1'), 'b{foo}': b('2'), 'c{bar}': b('3')}
         assert await r.mset(d)
         for k, v in iteritems(d):
             assert await r.mget(k) == [v]

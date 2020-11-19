@@ -1,3 +1,4 @@
+from collections import defaultdict
 import datetime
 from aredis.exceptions import RedisError
 from aredis.utils import (NodeFlag, nativestr,
@@ -329,20 +330,55 @@ class ClusterStringsCommandMixin(StringsCommandMixin):
         'BITOP': NodeFlag.BLOCKED
     }
 
+    @staticmethod
+    def _get_hash_tag_from_key(key):
+        """
+        Returns the "hash tag" for a key or None if one does not exist.
+
+        For the spec, see the following documentation:
+        https://redis.io/topics/cluster-tutorial#redis-cluster-data-sharding
+        """
+        if key.count('{') != 1 or key.count('}') != 1:
+            # no hash tag
+            return None
+        if key.index('{') >= key.index('}'):
+            # invalid hash tag
+            return None
+        return key.split('{', 2)[1].split('}', 2)[0]
+
     async def mget(self, keys, *args):
         """
         Returns a list of values ordered identically to ``keys``
 
         Cluster impl:
-            Itterate all keys and send GET for each key.
-            This will go alot slower than a normal mget call in StrictRedis.
+            Find groups of keys with the same hash tag and execute an MGET for
+            each group. Execute individual GETs for all other keys.
 
-            Operation is no longer atomic.
+            For a definition of "hash tags", see
+            https://redis.io/topics/cluster-tutorial#redis-cluster-data-sharding
+
+            Operation will be atomic only if all keys belong to a single
+            hash tag.
         """
-        res = list()
-        for arg in list_or_args(keys, args):
-            res.append(await self.get(arg))
-        return res
+        ordered_keys = list_or_args(keys, args)
+        res_mapping = {}  # key -> res
+        hash_tag_slots = defaultdict(list)
+
+        for key in ordered_keys:
+            hash_tag = self._get_hash_tag_from_key(key)
+            if hash_tag is not None:
+                # enqueue this key to be fetched in a group later
+                hash_tag_slots[hash_tag].append(key)
+            else:
+                # a loose key without a hash tag, can't use MGET
+                res_mapping[key] = await self.get(key)
+
+        for mget_keys in hash_tag_slots.values():
+            mget_res = await self.execute_command('MGET', *mget_keys)
+            for key, res in zip(mget_keys, mget_res):
+                res_mapping[key] = res
+
+        return [res_mapping[k] for k in ordered_keys]
 
     async def mset(self, *args, **kwargs):
         """
@@ -350,17 +386,33 @@ class ClusterStringsCommandMixin(StringsCommandMixin):
         dictionary argument or as kwargs.
 
         Cluster impl:
-            Itterate over all items and do SET on each (k,v) pair
+            Find groups of keys with the same hash tag and execute an MSET for
+            each group. Execute individual SETs for all other key/value pairs.
 
-            Operation is no longer atomic.
+            For a definition of "hash tags", see
+            https://redis.io/topics/cluster-tutorial#redis-cluster-data-sharding
+
+            Operation will be atomic only if all keys belong to a single
+            hash tag.
         """
         if args:
             if len(args) != 1 or not isinstance(args[0], dict):
                 raise RedisError('MSET requires **kwargs or a single dict arg')
             kwargs.update(args[0])
 
+        hash_tag_slots = defaultdict(list)
         for pair in iteritems(kwargs):
-            await self.set(pair[0], pair[1])
+            key, v = pair
+            hash_tag = self._get_hash_tag_from_key(key)
+            if hash_tag is not None:
+                # enqueue this key to be fetched in a group later
+                hash_tag_slots[hash_tag].extend(pair)
+            else:
+                # a loose key without a hash tag, can't use MSET
+                await self.set(key, v)
+
+        for mset_items in hash_tag_slots.values():
+            await self.execute_command('MSET', *mset_items)
 
         return True
 
