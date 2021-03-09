@@ -6,12 +6,12 @@ from aredis.connection import (
 )
 from aredis.pool import ConnectionPool, ClusterConnectionPool
 from aredis.exceptions import (
-    AuthenticationError, BusyLoadingError, ConnectionError,
-    DataError, InvalidResponse, PubSubError, ReadOnlyError,
-    RedisError, ResponseError, TimeoutError, WatchError,
-    CompressError, ClusterDownException, ClusterCrossSlotError,
-    CacheError, ClusterDownError, ClusterError, RedisClusterException,
-    RedisClusterError, ExecAbortError, LockError, NoScriptError
+    AuthenticationFailureError, AuthenticationRequiredError, BusyLoadingError,
+    CacheError, ClusterCrossSlotError, ClusterDownError, ClusterDownException,
+    ClusterError, CompressError, ConnectionError, DataError, ExecAbortError,
+    InvalidResponse, LockError, NoPermissionError, NoScriptError, PubSubError,
+    ReadOnlyError, RedisClusterError, RedisClusterException, RedisError,
+    ResponseError, TimeoutError, WatchError
 )
 
 
@@ -24,10 +24,12 @@ __all__ = [
     'StrictRedis', 'StrictRedisCluster',
     'Connection', 'UnixDomainSocketConnection', 'ClusterConnection',
     'ConnectionPool', 'ClusterConnectionPool',
-    'AuthenticationError', 'BusyLoadingError', 'ConnectionError', 'DataError',
-    'InvalidResponse', 'PubSubError', 'ReadOnlyError', 'RedisError',
-    'ResponseError', 'TimeoutError', 'WatchError',
-    'CompressError', 'ClusterDownException', 'ClusterCrossSlotError',
-    'CacheError', 'ClusterDownError', 'ClusterError', 'RedisClusterException',
-    'RedisClusterError', 'ExecAbortError', 'LockError', 'NoScriptError'
+    'AuthenticationFailureError', 'AuthenticationRequiredError',
+    'BusyLoadingError', 'CacheError', 'ClusterCrossSlotError',
+    'ClusterDownError', 'ClusterDownException', 'ClusterError',
+    'CompressError', 'ConnectionError', 'DataError', 'ExecAbortError',
+    'InvalidResponse', 'LockError', 'NoPermissionError', 'NoScriptError',
+    'PubSubError', 'ReadOnlyError', 'RedisClusterError',
+    'RedisClusterException', 'RedisError', 'ResponseError', 'TimeoutError',
+    'WatchError'
 ]
