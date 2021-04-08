@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 import socket
+import sys
 
 import pytest
 from aredis import (Connection,
@@ -22,6 +23,8 @@ async def test_connect_tcp(event_loop):
 
 
 @pytest.mark.asyncio(forbid_global_loop=True)
+@pytest.mark.xfail(sys.platform == 'darwin',
+                   reason='OSX does not support TCP_KEEP* properties')
 async def test_connect_tcp_keepalive_options(event_loop):
     conn = Connection(
         loop=event_loop,
