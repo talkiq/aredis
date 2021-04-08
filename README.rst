@@ -1,44 +1,49 @@
-aredis
-======
-|pypi-ver| |circleci-status| |python-ver|
+talkiq/aredis
+=============
 
-An efficient and user-friendly async redis client ported from `redis-py <https://github.com/andymccurdy/redis-py>`_
-(which is a Python interface to the Redis key-value)
+|circleci|
 
-To get more information please read `full document`_
+.. |circleci| image:: https://img.shields.io/circleci/project/github/talkiq/aredis/master.svg?style=flat-square
+    :alt: CircleCI Test Status
+    :target: https://circleci.com/gh/talkiq/aredis/tree/master
+
+A fork of `aredis <https://github.com/NoneGG/aredis>`_, which itself was ported
+from `redis-py <https://github.com/andymccurdy/redis-py>`_. Aredis provides an
+efficient and user-friendly async redis client with support for Redis Server,
+Cluster, and Sentinels.
+
+To get more information please read the `full document`_ managed by the
+upstream ``aredis`` repo.
 
 .. _full document: http://aredis.readthedocs.io/en/latest/
 
 Installation
 ------------
 
-aredis requires a running Redis server.
+``aredis`` requires a running Redis server. To install aredis, simply:
 
-To install aredis, simply:
+.. code-block:: console
 
-.. code-block:: bash
-
-    $ pip3 install aredis[hiredis]
+    python3 -m pip install aredis[hiredis]
 
 or from source:
 
-.. code-block:: bash
+.. code-block:: console
 
-    $ python setup.py install
-
+    python3 -m pip install .
 
 Getting started
 ---------------
 
 `More examples`_
 
-.. _More examples: https://github.com/NoneGG/aredis/tree/master/examples
+.. _More examples: https://github.com/talkiq/aredis/tree/master/examples
 
 Tip: since python 3.8 you can use asyncio REPL:
 
 .. code-block:: bash
 
-    $ python -m asyncio
+    $ python3 -m asyncio
 
 single node client
 ^^^^^^^^^^^^^^^^^^
@@ -95,26 +100,17 @@ cluster client
 Benchmark
 ---------
 
-Please run test script in benchmarks dir to confirm the benchmark.
+Please run test scripts in the ``benchmarks`` directory to confirm the
+benchmarks.
 
-For benchmark in my environment please see: `benchmark`_
+For a benchmark in the original aredis author's environment please see:
+`benchmark`_.
 
 .. _benchmark: http://aredis.readthedocs.io/en/latest/benchmark.html
-
-.. |circleci-status| image:: https://img.shields.io/circleci/project/github/NoneGG/aredis/master.svg
-    :alt: CircleCI build status
-    :target: https://circleci.com/gh/NoneGG/aredis/tree/master
-
-.. |pypi-ver| image::  https://img.shields.io/pypi/v/aredis.svg
-    :target: https://pypi.python.org/pypi/aredis/
-    :alt: Latest Version in PyPI
-
-.. |python-ver| image:: https://img.shields.io/pypi/pyversions/aredis.svg
-    :target: https://pypi.python.org/pypi/aredis/
-    :alt: Supported Python versions
 
 Contributing
 ------------
 
-Enhancement, bug reports and Pull requests are welcomed, please make an issue to let me know.
-Fork me please~
+Developer? See our `guide`_ on how you can contribute.
+
+.. _guide: https://github.com/talkiq/aredis/blob/master/.github/CONTRIBUTING.rst
