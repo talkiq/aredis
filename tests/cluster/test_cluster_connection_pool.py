@@ -58,7 +58,7 @@ class TestConnectionPool:
         """
         pool = await self.get_pool()
         pool._in_use_connections = {}
-        pool.get_connection("pubsub", channel="foobar")
+        await pool.get_connection("pubsub", channel="foobar")
 
     @pytest.mark.asyncio()
     async def test_connection_creation(self):
@@ -173,7 +173,7 @@ class TestConnectionPool:
         pool = await self.get_pool()
 
         with pytest.raises(RedisClusterException) as ex:
-            pool.get_connection("GET")
+            await pool.get_connection("GET")
         assert str(ex.value).startswith("Only 'pubsub' commands can use get_connection()")
 
     @pytest.mark.asyncio()
