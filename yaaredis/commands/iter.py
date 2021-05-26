@@ -1,3 +1,6 @@
+import asyncio
+
+
 class IterCommandMixin:
     """
     convenient function of scan iter, make it a class separately
@@ -81,18 +84,32 @@ class ClusterIterCommandMixin(IterCommandMixin):
     async def scan_iter(self, match=None, count=None,
                         type=type):  # pylint: disable=redefined-builtin
         nodes = await self.cluster_nodes()
+
+        async def iterate_node(node, queue):
+            nonlocal match, count, type, nodes
+            cursor = '0'
+            while cursor != 0:
+                pieces = [cursor]
+                if match is not None:
+                    pieces.extend(['MATCH', match])
+                if count is not None:
+                    pieces.extend(['COUNT', count])
+                if type is not None:
+                    pieces.extend(['TYPE', type])
+                response = await self.execute_command_on_nodes(
+                    [node], 'SCAN', *pieces)
+                cursor, data = list(response.values())[0]
+                for item in data:
+                    await queue.put(item)  # blocks if queue is full
+
+        # maxsize ensures we don't pull too much data into
+        # memory if we are not processing it yet
+        queue = asyncio.Queue(maxsize=1000)
+        tasks = []
         for node in nodes:
             if 'master' in node['flags']:
-                cursor = '0'
-                while cursor != 0:
-                    pieces = [cursor]
-                    if match is not None:
-                        pieces.extend(['MATCH', match])
-                    if count is not None:
-                        pieces.extend(['COUNT', count])
-                    if type is not None:
-                        pieces.extend(['TYPE', type])
-                    response = await self.execute_command_on_nodes([node], 'SCAN', *pieces)
-                    cursor, data = list(response.values())[0]
-                    for item in data:
-                        yield item
+                t = asyncio.create_task(iterate_node(node, queue))
+                tasks.append(t)
+
+        while not all(t.done() for t in tasks):
+            yield await queue.get()
