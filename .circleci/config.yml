@@ -24,7 +24,7 @@ jobs:
   pytest-cluster:
     docker:
       - image: python:<<parameters.python_version>>
-      - image: grokzen/redis-cluster:<<parameters.redis_version>>
+      - image: thekevjames/redis-cluster:<<parameters.redis_version>>
     parameters:
       hiredis:
         type: boolean
