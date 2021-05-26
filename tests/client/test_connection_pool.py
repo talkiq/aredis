@@ -30,31 +30,35 @@ class TestConnectionPool:
             **connection_kwargs)
         return pool
 
-    def test_connection_creation(self):
+    @pytest.mark.asyncio()
+    async def test_connection_creation(self):
         connection_kwargs = {'foo': 'bar', 'biz': 'baz'}
         pool = self.get_pool(connection_kwargs=connection_kwargs)
-        connection = pool.get_connection()
+        connection = await pool.get_connection()
         assert isinstance(connection, DummyConnection)
         assert connection.kwargs == connection_kwargs
 
-    def test_multiple_connections(self):
+    @pytest.mark.asyncio()
+    async def test_multiple_connections(self):
         pool = self.get_pool()
-        c1 = pool.get_connection()
-        c2 = pool.get_connection()
+        c1 = await pool.get_connection()
+        c2 = await pool.get_connection()
         assert c1 != c2
 
-    def test_max_connections(self):
+    @pytest.mark.asyncio()
+    async def test_max_connections(self):
         pool = self.get_pool(max_connections=2)
-        pool.get_connection()
-        pool.get_connection()
+        await pool.get_connection()
+        await pool.get_connection()
         with pytest.raises(ConnectionError):
-            pool.get_connection()
+            await pool.get_connection()
 
-    def test_reuse_previously_released_connection(self):
+    @pytest.mark.asyncio()
+    async def test_reuse_previously_released_connection(self):
         pool = self.get_pool()
-        c1 = pool.get_connection()
+        c1 = await pool.get_connection()
         pool.release(c1)
-        c2 = pool.get_connection()
+        c2 = await pool.get_connection()
         assert c1 == c2
 
     def test_repr_contains_db_info_tcp(self):
@@ -85,6 +89,91 @@ class TestConnectionPool:
         assert len(rs.connection_pool._in_use_connections) == 0
         assert last_active_at == conn.last_active_at
         assert conn._writer is None and conn._reader is None
+
+
+class TestBlockingConnectionPool:
+    def get_pool(self, connection_kwargs=None, max_connections=None,
+                 connection_class=DummyConnection, timeout=None):
+        connection_kwargs = connection_kwargs or {}
+        pool = aredis.BlockingConnectionPool(
+            connection_class=connection_class,
+            max_connections=max_connections,
+            timeout=timeout,
+            **connection_kwargs)
+        return pool
+
+    @pytest.mark.asyncio(forbid_global_loop=True)
+    async def test_connection_creation(self):
+        connection_kwargs = {'foo': 'bar', 'biz': 'baz'}
+        pool = self.get_pool(connection_kwargs=connection_kwargs)
+        connection = await pool.get_connection()
+        assert isinstance(connection, DummyConnection)
+        assert connection.kwargs == connection_kwargs
+
+    @pytest.mark.asyncio(forbid_global_loop=True)
+    async def test_multiple_connections(self):
+        pool = self.get_pool()
+        c1 = await pool.get_connection()
+        c2 = await pool.get_connection()
+        assert c1 != c2
+
+    @pytest.mark.asyncio(forbid_global_loop=True)
+    async def test_max_connections_timeout(self):
+        pool = self.get_pool(max_connections=2, timeout=0.1)
+        await pool.get_connection()
+        await pool.get_connection()
+        with pytest.raises(ConnectionError):
+            await pool.get_connection()
+
+    @pytest.mark.asyncio(forbid_global_loop=True)
+    async def test_max_connections_no_timeout(self, event_loop):
+        pool = self.get_pool(max_connections=2)
+        await pool.get_connection()
+        released_conn = await pool.get_connection()
+        def releaser():
+            pool.release(released_conn)
+
+        event_loop.call_later(0.2, releaser)
+        new_conn = await pool.get_connection()
+        assert new_conn == released_conn
+
+    @pytest.mark.asyncio(forbid_global_loop=True)
+    async def test_reuse_previously_released_connection(self):
+        pool = self.get_pool()
+        c1 = await pool.get_connection()
+        pool.release(c1)
+        c2 = await pool.get_connection()
+        assert c1 == c2
+
+    def test_repr_contains_db_info_tcp(self):
+        connection_kwargs = {'host': 'localhost', 'port': 6379, 'db': 1}
+        pool = self.get_pool(connection_kwargs=connection_kwargs,
+                             connection_class=aredis.Connection)
+        expected = 'BlockingConnectionPool<Connection<host=localhost,port=6379,db=1>>'
+        assert repr(pool) == expected
+
+    def test_repr_contains_db_info_unix(self):
+        connection_kwargs = {'path': '/abc', 'db': 1}
+        pool = self.get_pool(connection_kwargs=connection_kwargs,
+                             connection_class=aredis.UnixDomainSocketConnection)
+        expected = 'BlockingConnectionPool<UnixDomainSocketConnection<path=/abc,db=1>>'
+        assert repr(pool) == expected
+
+    @pytest.mark.asyncio(forbid_global_loop=True)
+    async def test_connection_idle_check(self, event_loop):
+        rs = aredis.StrictRedis(host='127.0.0.1', port=6379, db=0,
+                                max_idle_time=0.2, idle_check_interval=0.1)
+        await rs.info()
+        assert len(rs.connection_pool._in_use_connections) == 0
+        conn = await rs.connection_pool.get_connection()
+        last_active_at = conn.last_active_at
+        rs.connection_pool.release(conn)
+        await asyncio.sleep(0.3)
+        assert len(rs.connection_pool._in_use_connections) == 0
+        assert last_active_at == conn.last_active_at
+        assert conn._writer is None and conn._reader is None
+        new_conn = await rs.connection_pool.get_connection()
+        assert conn != new_conn
 
 
 class TestConnectionPoolURLParsing:
@@ -393,25 +482,26 @@ class TestSSLConnectionURLParsing:
             'password': None,
         }
 
-    def test_cert_reqs_options(self):
+    @pytest.mark.asyncio()
+    async def test_cert_reqs_options(self):
         import ssl
         with pytest.raises(TypeError) as e:
             pool = aredis.ConnectionPool.from_url(
                 'rediss://?ssl_cert_reqs=none&ssl_keyfile=test')
             assert e.message == 'certfile should be a valid filesystem path'
-            assert pool.get_connection().ssl_context.verify_mode == ssl.CERT_NONE
+            assert (await pool.get_connection()).ssl_context.verify_mode == ssl.CERT_NONE
 
         with pytest.raises(TypeError) as e:
             pool = aredis.ConnectionPool.from_url(
                 'rediss://?ssl_cert_reqs=optional&ssl_keyfile=test')
             assert e.message == 'certfile should be a valid filesystem path'
-            assert pool.get_connection().ssl_context.verify_mode == ssl.CERT_OPTIONAL
+            assert (await pool.get_connection()).ssl_context.verify_mode == ssl.CERT_OPTIONAL
 
         with pytest.raises(TypeError) as e:
             pool = aredis.ConnectionPool.from_url(
                 'rediss://?ssl_cert_reqs=required&ssl_keyfile=test')
             assert e.message == 'certfile should be a valid filesystem path'
-            assert pool.get_connection().ssl_context.verify_mode == ssl.CERT_REQUIRED
+            assert (await pool.get_connection()).ssl_context.verify_mode == ssl.CERT_REQUIRED
 
 
 class TestConnection:

@@ -24,15 +24,22 @@ class PubSub:
         self.connection_pool = connection_pool
         self.ignore_subscribe_messages = ignore_subscribe_messages
         self.connection = None
+        self.reset()
+
+    async def _ensure_encoding(self):
         # we need to know the encoding options for this connection in order
         # to lookup channel and pattern names for callback handlers.
-        conn = connection_pool.get_connection('pubsub')
+        # we want to do this only once after initializing this class but
+        # before using our connection
+        if hasattr(self, "encoding"):
+            return
+
+        conn = await self.connection_pool.get_connection('pubsub')
         try:
             self.encoding = conn.encoding
             self.decode_responses = conn.decode_responses
         finally:
-            connection_pool.release(conn)
-        self.reset()
+            self.connection_pool.release(conn)
 
     def __del__(self):
         try:
@@ -93,13 +100,14 @@ class PubSub:
 
     async def execute_command(self, *args, **kwargs):
         """Executes a publish/subscribe command"""
+        await self._ensure_encoding()
 
         # NOTE: don't parse the response in this function -- it could pull a
         # legitimate message off the stack if the connection is already
         # subscribed to one or more channels
 
         if self.connection is None:
-            self.connection = self.connection_pool.get_connection()
+            self.connection = await self.connection_pool.get_connection()
             # register a callback that re-subscribes to any channels we
             # were listening to when we were disconnected
             self.connection.register_connect_callback(self.on_connect)
@@ -151,6 +159,8 @@ class PubSub:
         received on that pattern rather than producing a message via
         ``listen()``.
         """
+        await self._ensure_encoding()
+
         if args:
             args = list_or_args(args[0], args[1:])
         new_patterns = {}
@@ -169,6 +179,8 @@ class PubSub:
         Unsubscribes from the supplied patterns. If empy, unsubscribe from
         all patterns.
         """
+        await self._ensure_encoding()
+
         if args:
             args = list_or_args(args[0], args[1:])
         return await self.execute_command('PUNSUBSCRIBE', *args)
@@ -181,6 +193,8 @@ class PubSub:
         that channel rather than producing a message via ``listen()`` or
         ``get_message()``.
         """
+        await self._ensure_encoding()
+
         if args:
             args = list_or_args(args[0], args[1:])
         new_channels = {}
@@ -199,6 +213,8 @@ class PubSub:
         Unsubscribes from the supplied channels. If empty, unsubscribe from
         all channels
         """
+        await self._ensure_encoding()
+
         if args:
             args = list_or_args(args[0], args[1:])
         return await self.execute_command('UNSUBSCRIBE', *args)
@@ -348,7 +364,7 @@ class ClusterPubSub(PubSub):
         await self.connection_pool.initialize()
 
         if self.connection is None:
-            self.connection = self.connection_pool.get_connection(
+            self.connection = await self.connection_pool.get_connection(
                 'pubsub',
                 channel=args[1],
             )

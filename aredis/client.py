@@ -152,7 +152,7 @@ class StrictRedis(*mixins):
         """Executes a command and returns a parsed response"""
         pool = self.connection_pool
         command_name = args[0]
-        connection = pool.get_connection()
+        connection = await pool.get_connection()
         try:
             await connection.send_command(*args)
             return await self.parse_response(connection, command_name, **options)
