@@ -76,6 +76,7 @@ def skip_if_redis_py_version_lt(min_version):
     """
     import yaaredis
     version = yaaredis.__version__
+    version = version.replace('-alpha.', 'a')
     if StrictVersion(version) < StrictVersion(min_version):
         return pytest.mark.skipif(True, reason="")
     return pytest.mark.skipif(False, reason="")
