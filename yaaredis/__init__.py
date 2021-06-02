@@ -15,7 +15,7 @@ from yaaredis.exceptions import (
 )
 
 
-__version__ = '1.1.8'
+__version__ = '2.0.0-alpha.0'
 
 VERSION = tuple(map(int, __version__.split('.')))
 
