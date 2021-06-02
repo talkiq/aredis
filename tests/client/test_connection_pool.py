@@ -331,20 +331,12 @@ class TestConnectionPoolURLParsing:
             assert expected is to_bool(value)
 
     def test_invalid_extra_typed_querystring_options(self):
-        import warnings
-        with warnings.catch_warnings(record=True) as warning_log:
+        with pytest.raises(ConnectionError) as e:
             yaaredis.ConnectionPool.from_url(
                 'redis://localhost/2?stream_timeout=_&'
                 'connect_timeout=abc'
             )
-        # Compare the message values
-        assert [
-            str(m.message) for m in
-            sorted(warning_log, key=lambda l: str(l.message))
-        ] == [
-            'Invalid value for `connect_timeout` in connection URL.',
-            'Invalid value for `stream_timeout` in connection URL.',
-        ]
+            assert str(e) == 'Invalid value for `stream_timeout` in connection URL.'
 
     def test_extra_querystring_options(self):
         pool = yaaredis.ConnectionPool.from_url('redis://localhost?a=1&b=2')

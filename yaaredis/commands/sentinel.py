@@ -1,5 +1,3 @@
-import warnings
-
 from yaaredis.utils import (dict_merge, nativestr,
                           list_keys_to_dict,
                           NodeFlag, bool_ok)
@@ -89,10 +87,6 @@ class SentinelCommandMixin:
         'SENTINEL SET': bool_ok,
         'SENTINEL SLAVES': parse_sentinel_slaves_and_sentinels,
     }
-
-    async def sentinel(self, *args):
-        """Redis Sentinel's SENTINEL command."""
-        warnings.warn(DeprecationWarning('Use the individual sentinel_* methods'))
 
     async def sentinel_get_master_addr_by_name(self, service_name):
         """Returns a (host, port) pair for the given ``service_name``"""

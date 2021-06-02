@@ -1,5 +1,4 @@
 import asyncio
-import warnings
 from yaaredis.exceptions import (RedisClusterException,
                                WatchError)
 from yaaredis.utils import (string_keys_to_dict,
@@ -37,19 +36,6 @@ class TransactionCommandMixin:
                             loop=self.connection_pool.loop
                         )
                     continue
-
-    async def watch(self, *names):
-        """
-        Watches the values at keys ``names``, or None if the key doesn't exist
-        """
-        warnings.warn(DeprecationWarning('Call WATCH from a Pipeline object'))
-
-    async def unwatch(self):
-        """
-        Unwatches the value at key ``name``, or None of the key doesn't exist
-        """
-        warnings.warn(
-            DeprecationWarning('Call UNWATCH from a Pipeline object'))
 
 
 class ClusterTransactionCommandMixin(TransactionCommandMixin):

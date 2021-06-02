@@ -1,11 +1,11 @@
 import asyncio
 import inspect
+import logging
 import os
 import socket
 import ssl
 import sys
 import time
-import warnings
 
 from io import BytesIO
 
@@ -34,6 +34,9 @@ SYM_DOLLAR = b('$')
 SYM_CRLF = b('\r\n')
 SYM_LF = b('\n')
 SYM_EMPTY = b('')
+
+
+logger = logging.getLogger(__name__)
 
 
 async def exec_with_timeout(coroutine, timeout, *, loop=None):
@@ -690,8 +693,9 @@ class ClusterConnection(Connection):
         set during object initialization.
         """
         if self.db:
-            warnings.warn('SELECT DB is not allowed in cluster mode')
+            logger.error('SELECT DB is not allowed in cluster mode')
             self.db = ''
+
         await super(ClusterConnection, self).on_connect()
         if self.readonly:
             await self.send_command('READONLY')

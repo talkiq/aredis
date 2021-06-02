@@ -3,7 +3,6 @@
 
 import asyncio
 import os
-import warnings
 import time
 import random
 import threading
@@ -96,9 +95,7 @@ class ConnectionPool:
                     try:
                         url_options[name] = parser(value[0])
                     except (TypeError, ValueError):
-                        warnings.warn(UserWarning(
-                            "Invalid value for `%s` in connection URL." % name
-                        ))
+                        raise ConnectionError("Invalid value for `%s` in connection URL." % name)
                 else:
                     url_options[name] = value[0]
 

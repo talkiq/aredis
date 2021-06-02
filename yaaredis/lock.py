@@ -1,13 +1,16 @@
 import asyncio
+import logging
 import time as mod_time
 import uuid
-import warnings
 
 import contextvars
 
 from yaaredis.connection import ClusterConnection
 from yaaredis.exceptions import LockError, WatchError
 from yaaredis.utils import b, dummy
+
+
+logger = logging.getLogger(__name__)
 
 
 class Lock:
@@ -303,7 +306,7 @@ class ClusterLock(LuaLock):
                 if count >= quorum:
                     return True
             except Exception as exc:
-                warnings.warn('error {} during check lock {} status in slave nodes'.format(exc, self.name))
+                logger.exception('error during check lock {} status in slave nodes'.format(self.name))
         return False
 
     async def acquire(self, blocking=None, blocking_timeout=None):
