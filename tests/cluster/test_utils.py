@@ -4,11 +4,11 @@
 from __future__ import with_statement
 
 # rediscluster imports
-from aredis.commands.cluster import parse_cluster_slots
-from aredis.exceptions import (
+from yaaredis.commands.cluster import parse_cluster_slots
+from yaaredis.exceptions import (
     RedisClusterException, ClusterDownError
 )
-from aredis.utils import (
+from yaaredis.utils import (
     list_keys_to_dict,
     b, dict_merge,
     blocked_command,

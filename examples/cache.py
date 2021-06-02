@@ -1,9 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-import aredis
+import yaaredis
 import asyncio
-from aredis.cache import IdentityGenerator
+from yaaredis.cache import IdentityGenerator
 
 
 class CustomIdentityGenerator(IdentityGenerator):
@@ -18,7 +18,7 @@ def expensive_work(data):
 
 
 async def example():
-    client = aredis.StrictRedis()
+    client = yaaredis.StrictRedis()
     await client.flushall()
     cache = client.cache('example_cache',
                          identity_generator_class=CustomIdentityGenerator)

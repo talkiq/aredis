@@ -9,9 +9,9 @@ import pytest
 from string import ascii_letters
 
 # rediscluster imports
-from aredis.exceptions import RedisClusterException, ResponseError, DataError, RedisError
-from aredis.utils import b, iteritems, iterkeys, itervalues
-from aredis.commands.server import parse_info
+from yaaredis.exceptions import RedisClusterException, ResponseError, DataError, RedisError
+from yaaredis.utils import b, iteritems, iterkeys, itervalues
+from yaaredis.commands.server import parse_info
 from tests.cluster.conftest import skip_if_server_version_lt, skip_if_redis_py_version_lt
 
 

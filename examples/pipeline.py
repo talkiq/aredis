@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import asyncio
-from aredis import StrictRedis
+from yaaredis import StrictRedis
 
 
 async def pipeline(client):

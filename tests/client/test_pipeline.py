@@ -1,8 +1,8 @@
 from __future__ import with_statement
 import pytest
 
-from aredis.utils import b
-from aredis.exceptions import (WatchError,
+from yaaredis.utils import b
+from yaaredis.exceptions import (WatchError,
                                ResponseError)
 
 

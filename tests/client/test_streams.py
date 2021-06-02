@@ -2,8 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import pytest
-import aredis
-from aredis.exceptions import RedisError, ResponseError
+from yaaredis.exceptions import RedisError, ResponseError
 
 from tests.client.conftest import skip_if_server_version_lt
 

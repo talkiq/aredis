@@ -1,12 +1,12 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-
-import aredis
 import asyncio
+
+import yaaredis
 
 
 async def example():
-    client = aredis.StrictRedis()
+    client = yaaredis.StrictRedis()
     # pay attention that async_generator don't need to be awaited
     keys = client.scan_iter()
     # use `async for` instead of `for` only

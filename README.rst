@@ -1,14 +1,15 @@
-talkiq/aredis
-=============
+talkiq/yaaredis
+===============
 
 |circleci|
 
-.. |circleci| image:: https://img.shields.io/circleci/project/github/talkiq/aredis/master.svg?style=flat-square
+.. |circleci| image:: https://img.shields.io/circleci/project/github/talkiq/yaaredis/master.svg?style=flat-square
     :alt: CircleCI Test Status
-    :target: https://circleci.com/gh/talkiq/aredis/tree/master
+    :target: https://circleci.com/gh/talkiq/yaaredis/tree/master
 
-A fork of `aredis <https://github.com/NoneGG/aredis>`_, which itself was ported
-from `redis-py <https://github.com/andymccurdy/redis-py>`_. Aredis provides an
+``yaaredis`` (Yet Another Async Redis (client)) is a fork of
+`aredis <https://github.com/NoneGG/aredis>`_, which itself was ported from
+`redis-py <https://github.com/andymccurdy/redis-py>`_. ``yaaredis`` provides an
 efficient and user-friendly async redis client with support for Redis Server,
 Cluster, and Sentinels.
 
@@ -20,11 +21,11 @@ upstream ``aredis`` repo.
 Installation
 ------------
 
-``aredis`` requires a running Redis server. To install aredis, simply:
+``yaaredis`` requires a running Redis server. To install yaaredis, simply:
 
 .. code-block:: console
 
-    python3 -m pip install aredis[hiredis]
+    python3 -m pip install yaaredis[hiredis]
 
 or from source:
 
@@ -37,7 +38,7 @@ Getting started
 
 `More examples`_
 
-.. _More examples: https://github.com/talkiq/aredis/tree/master/examples
+.. _More examples: https://github.com/talkiq/yaaredis/tree/master/examples
 
 Tip: since python 3.8 you can use asyncio REPL:
 
@@ -51,7 +52,7 @@ single node client
 .. code-block:: python
 
     import asyncio
-    from aredis import StrictRedis
+    from yaaredis import StrictRedis
 
     async def example():
         client = StrictRedis(host='127.0.0.1', port=6379, db=0)
@@ -76,7 +77,7 @@ cluster client
 .. code-block:: python
 
     import asyncio
-    from aredis import StrictRedisCluster
+    from yaaredis import StrictRedisCluster
 
     async def example():
         client = StrictRedisCluster(host='172.17.0.2', port=7001)
@@ -103,7 +104,7 @@ Benchmark
 Please run test scripts in the ``benchmarks`` directory to confirm the
 benchmarks.
 
-For a benchmark in the original aredis author's environment please see:
+For a benchmark in the original yaaredis author's environment please see:
 `benchmark`_.
 
 .. _benchmark: http://aredis.readthedocs.io/en/latest/benchmark.html
@@ -113,4 +114,4 @@ Contributing
 
 Developer? See our `guide`_ on how you can contribute.
 
-.. _guide: https://github.com/talkiq/aredis/blob/master/.github/CONTRIBUTING.rst
+.. _guide: https://github.com/talkiq/yaaredis/blob/master/.github/CONTRIBUTING.rst

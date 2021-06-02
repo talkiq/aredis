@@ -5,7 +5,7 @@ import asyncio
 import pytest
 import time
 
-from aredis.cache import Cache, HerdCache
+from yaaredis.cache import Cache, HerdCache
 
 
 class TestCache:

@@ -7,13 +7,13 @@ import re
 import time
 
 # rediscluster imports
-from aredis import StrictRedisCluster, StrictRedis
-from aredis.pool import ClusterConnectionPool
-from aredis.exceptions import (
+from yaaredis import StrictRedisCluster, StrictRedis
+from yaaredis.pool import ClusterConnectionPool
+from yaaredis.exceptions import (
     RedisClusterException, MovedError, AskError, ClusterDownError,
 )
-from aredis.utils import b
-from aredis.nodemanager import NodeManager
+from yaaredis.utils import b
+from yaaredis.nodemanager import NodeManager
 from tests.cluster.conftest import _get_client, skip_if_server_version_lt, skip_if_not_password_protected_nodes
 
 # 3rd party imports
@@ -107,7 +107,7 @@ class DummyConnection:
 #     assert {"host": h, "port": p} in c.connection_pool.nodes.startup_nodes
 #
 #
-# @patch('aredis.StrictRedis', new=MagicMock())
+# @patch('yaaredis.StrictRedis', new=MagicMock())
 # def test_skip_full_coverage_check():
 #     """
 #     Test if the cluster_require_full_coverage NodeManager method was not called with the flag activated

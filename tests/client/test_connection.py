@@ -4,7 +4,7 @@ import socket
 import sys
 
 import pytest
-from aredis import (Connection,
+from yaaredis import (Connection,
                     UnixDomainSocketConnection)
 
 

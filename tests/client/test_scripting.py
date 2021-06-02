@@ -1,9 +1,9 @@
 from __future__ import with_statement
 import pytest
 
-from aredis.exceptions import (NoScriptError,
+from yaaredis.exceptions import (NoScriptError,
                                ResponseError)
-from aredis.utils import b
+from yaaredis.utils import b
 
 
 multiply_script = """

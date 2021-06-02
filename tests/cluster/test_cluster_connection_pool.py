@@ -15,10 +15,10 @@ except ImportError:
     ssl_available = False
 
 # rediscluster imports
-from aredis import StrictRedis, StrictRedisCluster
-from aredis.connection import ClusterConnection, Connection, UnixDomainSocketConnection
-from aredis.pool import ClusterConnectionPool, ConnectionPool
-from aredis.exceptions import RedisClusterException
+from yaaredis import StrictRedis, StrictRedisCluster
+from yaaredis.connection import ClusterConnection, Connection, UnixDomainSocketConnection
+from yaaredis.pool import ClusterConnectionPool, ConnectionPool
+from yaaredis.exceptions import RedisClusterException
 
 # 3rd party imports
 import pytest

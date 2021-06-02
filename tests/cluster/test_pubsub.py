@@ -7,9 +7,9 @@ import concurrent.futures
 import time
 
 # rediscluster imports
-from aredis import StrictRedisCluster, StrictRedis
-from aredis.exceptions import ConnectionError, TimeoutError
-from aredis.utils import b
+from yaaredis import StrictRedisCluster, StrictRedis
+from yaaredis.exceptions import ConnectionError, TimeoutError
+from yaaredis.utils import b
 
 # 3rd party imports
 import pytest

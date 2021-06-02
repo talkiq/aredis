@@ -1,9 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-import aredis
 import asyncio
 import functools
+import yaaredis
 
 
 def cached(app, cache):
@@ -23,7 +23,7 @@ def cached(app, cache):
     return decorator
 
 
-cache = aredis.StrictRedis().cache('example_cache')
+cache = yaaredis.StrictRedis().cache('example_cache')
 
 
 @cached(app='example', cache=cache)

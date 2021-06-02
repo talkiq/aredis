@@ -1,9 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-
 import asyncio
 import time
-from aredis import StrictRedis
+
+from yaaredis import StrictRedis
 
 
 async def example():

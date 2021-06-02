@@ -5,9 +5,9 @@ from __future__ import with_statement
 import re
 
 # rediscluster imports
-from aredis import StrictRedisCluster, ClusterConnectionPool
-from aredis.utils import b
-from aredis.exceptions import RedisClusterException, WatchError, ResponseError, ConnectionError
+from yaaredis import StrictRedisCluster, ClusterConnectionPool
+from yaaredis.utils import b
+from yaaredis.exceptions import RedisClusterException, WatchError, ResponseError, ConnectionError
 from tests.cluster.conftest import _get_client
 
 # 3rd party imports

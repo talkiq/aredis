@@ -1,10 +1,9 @@
 import curio
-
-import aredis
+import yaaredis
 
 
 async def aio_child():
-    redis = aredis.StrictRedis(host='127.0.0.1', port=6379, db=0)
+    redis = yaaredis.StrictRedis(host='127.0.0.1', port=6379, db=0)
     await redis.flushdb()
     await redis.set('bar', 'foo')
     bar = await redis.get('bar')

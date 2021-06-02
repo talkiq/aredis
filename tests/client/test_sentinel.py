@@ -1,9 +1,9 @@
 from __future__ import with_statement
 import pytest
-import aredis
+import yaaredis
 
-from aredis.exceptions import ConnectionError, TimeoutError
-from aredis.sentinel import (Sentinel, SentinelConnectionPool,
+from yaaredis.exceptions import ConnectionError, TimeoutError
+from yaaredis.sentinel import (Sentinel, SentinelConnectionPool,
                              MasterNotFoundError, SlaveNotFoundError)
 
 
@@ -56,10 +56,10 @@ class SentinelTestCluster:
 @pytest.fixture()
 def cluster(request):
     def teardown():
-        aredis.sentinel.StrictRedis = saved_StrictRedis
+        yaaredis.sentinel.StrictRedis = saved_StrictRedis
     cluster = SentinelTestCluster()
-    saved_StrictRedis = aredis.sentinel.StrictRedis
-    aredis.sentinel.StrictRedis = cluster.client
+    saved_StrictRedis = yaaredis.sentinel.StrictRedis
+    yaaredis.sentinel.StrictRedis = cluster.client
     request.addfinalizer(teardown)
     return cluster
 

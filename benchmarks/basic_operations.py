@@ -1,4 +1,4 @@
-import aredis
+import yaaredis
 import asyncio
 import uvloop
 import time
@@ -33,7 +33,7 @@ def parse_args():
 
 async def run():
     args = parse_args()
-    r = aredis.StrictRedis()
+    r = yaaredis.StrictRedis()
     await r.flushall()
     await set_str(conn=r, num=args.n, pipeline_size=args.P, data_size=args.s)
     await set_int(conn=r, num=args.n, pipeline_size=args.P, data_size=args.s)
