@@ -1,9 +1,9 @@
-from yaaredis.utils import (bool_ok,
+from ..utils import (bool_ok,
                           nativestr,
                           NodeFlag,
                           list_keys_to_dict,
                           dict_merge)
-from yaaredis.exceptions import (RedisError,
+from ..exceptions import (RedisError,
                                ClusterError)
 
 

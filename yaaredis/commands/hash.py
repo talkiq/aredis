@@ -1,5 +1,5 @@
-from yaaredis.exceptions import DataError
-from yaaredis.utils import (b, dict_merge,
+from ..exceptions import DataError
+from ..utils import (b, dict_merge,
                           iteritems,
                           first_key,
                           string_keys_to_dict,

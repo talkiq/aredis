@@ -1,9 +1,9 @@
 import datetime
 import time as mod_time
-from yaaredis.exceptions import (ResponseError,
+from ..exceptions import (ResponseError,
                                RedisError,
                                DataError)
-from yaaredis.utils import (merge_result,
+from ..utils import (merge_result,
                           NodeFlag,
                           first_key,
                           b, dict_merge,

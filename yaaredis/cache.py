@@ -7,8 +7,8 @@ try:
 except ImportError:
     import json
 
-from yaaredis.utils import b
-from yaaredis.exceptions import (SerializeError,
+from .utils import b
+from .exceptions import (SerializeError,
                                CompressError)
 
 

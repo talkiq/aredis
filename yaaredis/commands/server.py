@@ -1,6 +1,6 @@
 import datetime
-from yaaredis.exceptions import RedisError
-from yaaredis.utils import (b, bool_ok,
+from ..exceptions import RedisError
+from ..utils import (b, bool_ok,
                           nativestr, dict_merge,
                           string_keys_to_dict,
                           list_keys_to_dict,

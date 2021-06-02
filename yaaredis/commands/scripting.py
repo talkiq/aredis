@@ -1,4 +1,4 @@
-from yaaredis.utils import (dict_merge, nativestr,
+from ..utils import (dict_merge, nativestr,
                           list_keys_to_dict,
                           NodeFlag, bool_ok)
 

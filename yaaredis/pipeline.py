@@ -2,12 +2,12 @@ import inspect
 import sys
 from itertools import chain
 
-import yaaredis
-from yaaredis.client import (StrictRedis, StrictRedisCluster)
-from yaaredis.exceptions import (AskError, ClusterTransactionError, ConnectionError, ExecAbortError, MovedError,
+from .compat import CancelledError
+from .client import (StrictRedis, StrictRedisCluster)
+from .exceptions import (AskError, ClusterTransactionError, ConnectionError, ExecAbortError, MovedError,
                                RedisClusterException, RedisError, ResponseError, TimeoutError, TryAgainError,
                                WatchError)
-from yaaredis.utils import (clusterdown_wrapper, dict_merge)
+from .utils import (clusterdown_wrapper, dict_merge)
 
 ERRORS_ALLOW_RETRY = (ConnectionError, TimeoutError, MovedError, AskError, TryAgainError)
 
@@ -199,7 +199,7 @@ class BasePipeline:
                     r = callback(r, **options)
                     # typing.Awaitable is not available in Python3.5
                     # so use inspect.isawaitable instead
-                    # according to issue https://github.com/NoneGG/yaaredis/issues/77
+                    # according to issue https://github.com/NoneGG/aredis/issues/77
                     if inspect.isawaitable(response):
                         r = await r
             data.append(r)
@@ -284,7 +284,7 @@ class BasePipeline:
 
         try:
             return await exec(conn, stack, raise_on_error)
-        except (ConnectionError, TimeoutError, yaaredis.compat.CancelledError) as e:
+        except (ConnectionError, TimeoutError, CancelledError) as e:
             conn.disconnect()
             if not conn.retry_on_timeout and isinstance(e, TimeoutError):
                 raise

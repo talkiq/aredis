@@ -1,6 +1,6 @@
 import string
 import random
-from yaaredis.utils import (string_keys_to_dict,
+from ..utils import (string_keys_to_dict,
                           dict_merge,
                           bool_ok)
 

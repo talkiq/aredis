@@ -1,6 +1,6 @@
 import re
-from yaaredis.exceptions import RedisError
-from yaaredis.utils import (b, iteritems,
+from ..exceptions import RedisError
+from ..utils import (b, iteritems,
                           first_key,
                           iterkeys,
                           itervalues,

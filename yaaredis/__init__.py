@@ -1,11 +1,11 @@
-from yaaredis.client import (StrictRedis, StrictRedisCluster)
-from yaaredis.connection import (
+from .client import (StrictRedis, StrictRedisCluster)
+from .connection import (
     Connection,
     UnixDomainSocketConnection,
     ClusterConnection
 )
-from yaaredis.pool import ConnectionPool, ClusterConnectionPool, BlockingConnectionPool
-from yaaredis.exceptions import (
+from .pool import ConnectionPool, ClusterConnectionPool, BlockingConnectionPool
+from .exceptions import (
     AuthenticationFailureError, AuthenticationRequiredError, BusyLoadingError,
     CacheError, ClusterCrossSlotError, ClusterDownError, ClusterDownException,
     ClusterError, CompressError, ConnectionError, DataError, ExecAbortError,

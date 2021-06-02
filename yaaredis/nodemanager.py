@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
 import random
-from yaaredis.utils import (b, hash_slot)
-from yaaredis.exceptions import (ConnectionError,
+from .utils import (b, hash_slot)
+from .exceptions import (ConnectionError,
                                RedisClusterException)
 
 
@@ -82,7 +82,7 @@ class NodeManager:
         return random.choice(list(self.nodes.values()))
 
     def get_redis_link(self, host, port):
-        from yaaredis.client import StrictRedis
+        from .client import StrictRedis
         allowed_keys = (
             'password',
             'stream_timeout',

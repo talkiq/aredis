@@ -1,5 +1,5 @@
-from yaaredis.exceptions import RedisError
-from yaaredis.utils import (dict_merge, pairs_to_dict,
+from ..exceptions import RedisError
+from ..utils import (dict_merge, pairs_to_dict,
                           string_keys_to_dict, bool_ok)
 
 

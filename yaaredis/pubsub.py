@@ -1,9 +1,9 @@
 import asyncio
 import threading
 
-from yaaredis.compat import CancelledError
-from yaaredis.exceptions import PubSubError, ConnectionError, TimeoutError
-from yaaredis.utils import (list_or_args,
+from .compat import CancelledError
+from .exceptions import PubSubError, ConnectionError, TimeoutError
+from .utils import (list_or_args,
                           iteritems,
                           iterkeys,
                           nativestr)

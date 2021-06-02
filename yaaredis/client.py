@@ -1,29 +1,29 @@
 import asyncio
 import sys
 
-from yaaredis.commands.cluster import ClusterCommandMixin
-from yaaredis.commands.connection import ClusterConnectionCommandMixin, ConnectionCommandMixin
-from yaaredis.commands.extra import ExtraCommandMixin
-from yaaredis.commands.geo import GeoCommandMixin
-from yaaredis.commands.hash import ClusterHashCommandMixin, HashCommandMixin
-from yaaredis.commands.hyperlog import ClusterHyperLogCommandMixin, HyperLogCommandMixin
-from yaaredis.commands.keys import ClusterKeysCommandMixin, KeysCommandMixin
-from yaaredis.commands.lists import ClusterListsCommandMixin, ListsCommandMixin
-from yaaredis.commands.pubsub import CLusterPubSubCommandMixin, PubSubCommandMixin
-from yaaredis.commands.scripting import ClusterScriptingCommandMixin, ScriptingCommandMixin
-from yaaredis.commands.sentinel import ClusterSentinelCommands, SentinelCommandMixin
-from yaaredis.commands.server import ClusterServerCommandMixin, ServerCommandMixin
-from yaaredis.commands.sets import ClusterSetsCommandMixin, SetsCommandMixin
-from yaaredis.commands.sorted_set import ClusterSortedSetCommandMixin, SortedSetCommandMixin
-from yaaredis.commands.streams import StreamsCommandMixin
-from yaaredis.commands.strings import ClusterStringsCommandMixin, StringsCommandMixin
-from yaaredis.commands.transaction import ClusterTransactionCommandMixin, TransactionCommandMixin
-from yaaredis.compat import CancelledError
-from yaaredis.connection import RedisSSLContext, UnixDomainSocketConnection
-from yaaredis.exceptions import (AskError, BusyLoadingError, ClusterDownError, ClusterError, ConnectionError, MovedError,
+from .commands.cluster import ClusterCommandMixin
+from .commands.connection import ClusterConnectionCommandMixin, ConnectionCommandMixin
+from .commands.extra import ExtraCommandMixin
+from .commands.geo import GeoCommandMixin
+from .commands.hash import ClusterHashCommandMixin, HashCommandMixin
+from .commands.hyperlog import ClusterHyperLogCommandMixin, HyperLogCommandMixin
+from .commands.keys import ClusterKeysCommandMixin, KeysCommandMixin
+from .commands.lists import ClusterListsCommandMixin, ListsCommandMixin
+from .commands.pubsub import CLusterPubSubCommandMixin, PubSubCommandMixin
+from .commands.scripting import ClusterScriptingCommandMixin, ScriptingCommandMixin
+from .commands.sentinel import ClusterSentinelCommands, SentinelCommandMixin
+from .commands.server import ClusterServerCommandMixin, ServerCommandMixin
+from .commands.sets import ClusterSetsCommandMixin, SetsCommandMixin
+from .commands.sorted_set import ClusterSortedSetCommandMixin, SortedSetCommandMixin
+from .commands.streams import StreamsCommandMixin
+from .commands.strings import ClusterStringsCommandMixin, StringsCommandMixin
+from .commands.transaction import ClusterTransactionCommandMixin, TransactionCommandMixin
+from .compat import CancelledError
+from .connection import RedisSSLContext, UnixDomainSocketConnection
+from .exceptions import (AskError, BusyLoadingError, ClusterDownError, ClusterError, ConnectionError, MovedError,
                                RedisClusterException, TimeoutError, TryAgainError)
-from yaaredis.pool import (ClusterConnectionPool, ConnectionPool)
-from yaaredis.utils import (NodeFlag, blocked_command, clusterdown_wrapper, dict_merge, first_key)
+from .pool import (ClusterConnectionPool, ConnectionPool)
+from .utils import (NodeFlag, blocked_command, clusterdown_wrapper, dict_merge, first_key)
 
 mixins = [
     ClusterCommandMixin, ConnectionCommandMixin, ExtraCommandMixin,
@@ -43,7 +43,7 @@ cluster_mixins = [
 ]
 
 if sys.version_info[:2] >= (3, 6):
-    from yaaredis.commands.iter import IterCommandMixin, ClusterIterCommandMixin
+    from .commands.iter import IterCommandMixin, ClusterIterCommandMixin
 
     mixins.append(IterCommandMixin)
     cluster_mixins.append(ClusterIterCommandMixin)
@@ -189,7 +189,7 @@ class StrictRedis(*mixins):
         atomic, pipelines are useful for reducing the back-and-forth overhead
         between the client and server.
         """
-        from yaaredis.pipeline import StrictPipeline
+        from .pipeline import StrictPipeline
         pipeline = StrictPipeline(self.connection_pool, self.response_callbacks,
                                   transaction, shard_hint)
         await pipeline.reset()
@@ -489,7 +489,7 @@ class StrictRedisCluster(StrictRedis, *cluster_mixins):
         if shard_hint:
             raise RedisClusterException("shard_hint is deprecated in cluster mode")
 
-        from yaaredis.pipeline import StrictClusterPipeline
+        from .pipeline import StrictClusterPipeline
         return StrictClusterPipeline(
             connection_pool=self.connection_pool,
             startup_nodes=self.connection_pool.nodes.startup_nodes,

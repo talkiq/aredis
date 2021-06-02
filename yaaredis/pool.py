@@ -10,12 +10,12 @@ from itertools import chain
 from urllib.parse import (parse_qs,
                           unquote,
                           urlparse)
-from yaaredis.connection import (RedisSSLContext,
+from .connection import (RedisSSLContext,
                                Connection,
                                UnixDomainSocketConnection,
                                ClusterConnection)
-from yaaredis.nodemanager import NodeManager
-from yaaredis.exceptions import (ConnectionError,
+from .nodemanager import NodeManager
+from .exceptions import (ConnectionError,
                                RedisClusterException)
 
 FALSE_STRINGS = ('0', 'F', 'FALSE', 'N', 'NO')

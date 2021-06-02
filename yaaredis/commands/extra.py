@@ -1,7 +1,7 @@
-from yaaredis.lock import Lock, LuaLock
-from yaaredis.cache import (Cache, IdentityGenerator,
+from ..lock import Lock, LuaLock
+from ..cache import (Cache, IdentityGenerator,
                           Serializer, Compressor)
-from yaaredis.exceptions import ResponseError
+from ..exceptions import ResponseError
 
 
 class ExtraCommandMixin:

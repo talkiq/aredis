@@ -1,5 +1,5 @@
-from yaaredis.exceptions import RedisError
-from yaaredis.utils import b, nativestr
+from ..exceptions import RedisError
+from ..utils import b, nativestr
 
 
 def parse_georadius_generic(response, **options):

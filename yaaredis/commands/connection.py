@@ -1,4 +1,4 @@
-from yaaredis.utils import (NodeFlag,
+from ..utils import (NodeFlag,
                           bool_ok,
                           nativestr)
 

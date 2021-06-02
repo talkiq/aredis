@@ -1,6 +1,6 @@
-from yaaredis.pubsub import (PubSub,
+from ..pubsub import (PubSub,
                            ClusterPubSub)
-from yaaredis.utils import (dict_merge,
+from ..utils import (dict_merge,
                           merge_result,
                           list_keys_to_dict,
                           NodeFlag)

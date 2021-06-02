@@ -1,7 +1,7 @@
 from collections import defaultdict
 import datetime
-from yaaredis.exceptions import RedisError
-from yaaredis.utils import (NodeFlag, nativestr,
+from ..exceptions import RedisError
+from ..utils import (NodeFlag, nativestr,
                           iteritems,
                           list_or_args,
                           dict_merge,

@@ -1,7 +1,7 @@
-from yaaredis.utils import (b, dict_merge,
+from ..utils import (b, dict_merge,
                           bool_ok, nativestr,
                           string_keys_to_dict)
-from yaaredis.exceptions import (DataError,
+from ..exceptions import (DataError,
                                RedisClusterException,
                                RedisError)
 

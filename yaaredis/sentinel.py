@@ -2,12 +2,12 @@ import os
 import random
 import weakref
 
-from yaaredis import StrictRedis
-from yaaredis.connection import Connection
-from yaaredis.pool import ConnectionPool
-from yaaredis.exceptions import (ConnectionError, ResponseError, ReadOnlyError,
+from .client import StrictRedis
+from .connection import Connection
+from .pool import ConnectionPool
+from .exceptions import (ConnectionError, ResponseError, ReadOnlyError,
                                TimeoutError)
-from yaaredis.utils import iteritems, nativestr
+from .utils import iteritems, nativestr
 
 
 class MasterNotFoundError(ConnectionError):

@@ -5,9 +5,9 @@ import uuid
 
 import contextvars
 
-from yaaredis.connection import ClusterConnection
-from yaaredis.exceptions import LockError, WatchError
-from yaaredis.utils import b, dummy
+from .connection import ClusterConnection
+from .exceptions import LockError, WatchError
+from .utils import b, dummy
 
 
 logger = logging.getLogger(__name__)

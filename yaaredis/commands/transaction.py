@@ -1,7 +1,7 @@
 import asyncio
-from yaaredis.exceptions import (RedisClusterException,
+from ..exceptions import (RedisClusterException,
                                WatchError)
-from yaaredis.utils import (string_keys_to_dict,
+from ..utils import (string_keys_to_dict,
                           bool_ok)
 
 

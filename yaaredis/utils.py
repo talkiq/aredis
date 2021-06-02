@@ -1,11 +1,12 @@
 import sys
 from functools import wraps
 
-from yaaredis.exceptions import (ClusterDownError, RedisClusterException)
+from .exceptions import (ClusterDownError, RedisClusterException)
+
 
 _C_EXTENSION_SPEEDUP = False
 try:
-    from yaaredis.speedups import crc16, hash_slot
+    from .speedups import crc16, hash_slot
 
     _C_EXTENSION_SPEEDUP = True
 except Exception:

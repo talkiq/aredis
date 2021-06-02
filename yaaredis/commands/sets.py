@@ -1,4 +1,4 @@
-from yaaredis.utils import (b, dict_merge,
+from ..utils import (b, dict_merge,
                           list_or_args,
                           first_key,
                           string_keys_to_dict)
