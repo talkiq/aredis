@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "yaaredis"
-version = "2.0.0-alpha.2"
+version = "2.0.0-alpha.3"
 description = "Python async client for Redis key-value store"
 readme = "README.rst"
 
@@ -29,5 +29,5 @@ hiredis = ["hiredis"]
 # addopts = "-Werror"
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
+requires = ["setuptools", "poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
