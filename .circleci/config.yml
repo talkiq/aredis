@@ -89,9 +89,12 @@ jobs:
       - run: poetry publish -u $TWINE_USERNAME -p $TWINE_PASSWORD
 
 workflows:
-  test:
+  run-jobs:
     jobs:
-      - linter/pre-commit
+      - linter/pre-commit:
+          filters:
+            tags:
+              only: /.*/
       - pytest-client:
           name: pytest-<<matrix.python_version>>-client-<<matrix.redis_version>>-hiredis-<<matrix.hiredis>>
           matrix:
@@ -100,6 +103,9 @@ workflows:
               hiredis: [false, true]
               python_version: ['3.5', '3.6', '3.7', '3.8']
               redis_version: ['3', '4', '5', '6']
+          filters:
+            tags:
+              only: /.*/
       - pytest-cluster:
           name: pytest-<<matrix.python_version>>-cluster-<<matrix.redis_version>>-hiredis-<<matrix.hiredis>>
           matrix:
@@ -109,9 +115,10 @@ workflows:
               python_version: ['3.5', '3.6', '3.7', '3.8']
               # TODO: pin to latest builds
               redis_version: ['3.2.13', '4.0.14', '5.0.5', '6.0.12']
+          filters:
+            tags:
+              only: /.*/
 
-  deploy:
-    jobs:
       - build:
           name: build-sdist
           format: sdist
@@ -120,7 +127,11 @@ workflows:
             branches:
               ignore: /.*/
             tags:
-              only: /^[0-9]+\.[0-9]+\.[0-9]+/
+              only: /.*/
+          requires:
+            - linter/pre-commit
+            - pytest-client
+            - pytest-cluster
       - build:
           name: build-wheel-<<matrix.python_version>>
           format: wheel
@@ -132,7 +143,11 @@ workflows:
             branches:
               ignore: /.*/
             tags:
-              only: /^[0-9]+\.[0-9]+\.[0-9]+/
+              only: /.*/
+          requires:
+            - linter/pre-commit
+            - pytest-client
+            - pytest-cluster
       - publish:
           context: org-global
           python_version: '3.8'
@@ -140,7 +155,7 @@ workflows:
             branches:
               ignore: /.*/
             tags:
-              only: /^[0-9]+\.[0-9]+\.[0-9]+/
+              only: /.*/
           requires:
             - build-sdist
             - build-wheel
