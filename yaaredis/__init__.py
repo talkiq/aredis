@@ -1,3 +1,6 @@
+from pkg_resources import get_distribution
+__version__ = get_distribution('yaaredis').version
+
 from .client import StrictRedis
 from .client import StrictRedisCluster
 from .connection import ClusterConnection
@@ -30,9 +33,6 @@ from .exceptions import WatchError
 from .pool import BlockingConnectionPool
 from .pool import ClusterConnectionPool
 from .pool import ConnectionPool
-
-
-__version__ = '2.0.0-alpha.1'
 
 
 __all__ = [

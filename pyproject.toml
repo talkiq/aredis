@@ -1,0 +1,33 @@
+[tool.poetry]
+name = "yaaredis"
+version = "2.0.0-alpha.2"
+description = "Python async client for Redis key-value store"
+readme = "README.rst"
+
+repository = "https://github.com/talkiq/yaaredis"
+authors = ["Vi Engineering <voiceai-eng@dialpad.com>"]
+license = "MIT"
+
+build = "build.py"
+
+[tool.poetry.dependencies]
+python = "^3.5"
+contextvars = { version = ">=1.0.0,<3.0.0", python = "<3.7" }
+
+# hiredis
+hiredis = { version = ">=0.2.0,<3.0.0", optional = true }
+
+[tool.poetry.dev-dependencies]
+pytest = ">=4.0.0,<7.0.0"
+pytest-asyncio = ">=0.5.0,<1.0.0"
+
+[tool.poetry.extras]
+hiredis = ["hiredis"]
+
+[tool.pytest.ini_options]
+# TODO: fixup deprecations on py3.8
+# addopts = "-Werror"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

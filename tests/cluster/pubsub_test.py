@@ -218,6 +218,14 @@ class TestPubSubSubscribeUnsubscribe:
         assert p.subscribed is False
 
 
+class MockWorker:
+    def __init__(self):
+        self.message = None
+
+    def handle(self, message):
+        self.message = message
+
+
 class TestPubSubMessages:
     """
     Bug: Currently in cluster mode publish command will behave different then in
@@ -226,19 +234,9 @@ class TestPubSubMessages:
          Currently StrictRedis instances will be used to test pubsub because they
          are easier to work with.
     """
-
-    def __init__(self):
-        self.message = None
-
     @staticmethod
     def get_strict_redis_node(port, host='127.0.0.1'):
         return StrictRedis(port=port, host=host)
-
-    def setup_method(self):
-        self.message = None
-
-    def message_handler(self, message):
-        self.message = message
 
     @pytest.mark.asyncio
     async def test_published_message_to_channel(self):
@@ -307,10 +305,11 @@ class TestPubSubMessages:
     async def test_channel_message_handler(self, r):
         p = r.pubsub(ignore_subscribe_messages=True)
         try:
-            await p.subscribe(foo=self.message_handler)
+            worker = MockWorker()
+            await p.subscribe(foo=worker.handle)
             assert await r.publish('foo', 'test message') == 1
             assert await wait_for_message(p) is None
-            assert self.message == make_message(
+            assert worker.message == make_message(
                 'message', 'foo', 'test message')
         finally:
             await p.unsubscribe('foo')
@@ -319,23 +318,26 @@ class TestPubSubMessages:
     @pytest.mark.xfail(reason='Pattern pubsub do not work currently')
     async def test_pattern_message_handler(self, r):
         p = r.pubsub(ignore_subscribe_messages=True)
-        await p.psubscribe(**{'f*': self.message_handler})
+        worker = MockWorker()
+        await p.psubscribe(**{'f*': worker.handle})
         assert await r.publish('foo', 'test message') == 1
         assert await wait_for_message(p) is None
-        assert self.message == make_message('pmessage', 'foo', 'test message',
-                                            pattern='f*')
+        assert worker.message == make_message('pmessage', 'foo', 'test message',
+                                              pattern='f*')
 
     @pytest.mark.asyncio
     @pytest.mark.xfail(reason='Pattern pubsub do not work currently')
     async def test_unicode_channel_message_handler(self, r):
         p = r.pubsub(ignore_subscribe_messages=True)
         channel = 'uni' + chr(4456) + 'code'
-        channels = {channel: self.message_handler}
+        worker = MockWorker()
+        channels = {channel: worker.handle}
         print(channels)
         await p.subscribe(**channels)
         assert await r.publish(channel, 'test message') == 1
         assert await wait_for_message(p) is None
-        assert self.message == make_message('message', channel, 'test message')
+        assert worker.message == make_message(
+            'message', channel, 'test message')
 
     @pytest.mark.asyncio
     @pytest.mark.xfail(reason='Pattern pubsub do not work currently')
@@ -343,11 +345,12 @@ class TestPubSubMessages:
         p = r.pubsub(ignore_subscribe_messages=True)
         pattern = 'uni' + chr(4456) + '*'
         channel = 'uni' + chr(4456) + 'code'
-        await p.psubscribe(**{pattern: self.message_handler})
+        worker = MockWorker()
+        await p.psubscribe(**{pattern: worker.handle})
         assert await r.publish(channel, 'test message') == 1
         assert await wait_for_message(p) is None
-        assert self.message == make_message('pmessage', channel,
-                                            'test message', pattern=pattern)
+        assert worker.message == make_message('pmessage', channel,
+                                              'test message', pattern=pattern)
 
 
 class TestPubSubAutoDecoding:
@@ -367,12 +370,6 @@ class TestPubSubAutoDecoding:
             'pattern': pattern,
             'data': data,
         }
-
-    def setup_method(self, *args):
-        self.message = None
-
-    def message_handler(self, message):
-        self.message = message
 
     @pytest.mark.asyncio
     async def test_channel_subscribe_unsubscribe(self, o):
@@ -420,11 +417,12 @@ class TestPubSubAutoDecoding:
     @pytest.mark.asyncio
     async def test_channel_message_handler(self, o):
         p = o.pubsub(ignore_subscribe_messages=True)
-        await p.subscribe(**{self.channel: self.message_handler})
+        worker = MockWorker()
+        await p.subscribe(**{self.channel: worker.handle})
         await o.publish(self.channel, self.data)
         assert await wait_for_message(p) is None
-        assert self.message == self.make_message('message', self.channel,
-                                                 self.data)
+        assert worker.message == self.make_message('message', self.channel,
+                                                   self.data)
 
         # test that we reconnected to the correct channel
         p.connection.disconnect()
@@ -432,19 +430,20 @@ class TestPubSubAutoDecoding:
         new_data = self.data + 'new data'
         await o.publish(self.channel, new_data)
         assert await wait_for_message(p) is None
-        assert self.message == self.make_message('message', self.channel,
-                                                 new_data)
+        assert worker.message == self.make_message('message', self.channel,
+                                                   new_data)
 
     @pytest.mark.asyncio
     @pytest.mark.xfail(reason='Pattern pubsub do not work currently')
     async def test_pattern_message_handler(self, o):
         p = o.pubsub(ignore_subscribe_messages=True)
-        await p.psubscribe(**{self.pattern: self.message_handler})
+        worker = MockWorker()
+        await p.psubscribe(**{self.pattern: worker.handle})
         await o.publish(self.channel, self.data)
         assert await wait_for_message(p) is None
-        assert self.message == self.make_message('pmessage', self.channel,
-                                                 self.data,
-                                                 pattern=self.pattern)
+        assert worker.message == self.make_message('pmessage', self.channel,
+                                                   self.data,
+                                                   pattern=self.pattern)
 
         # test that we reconnected to the correct pattern
         p.connection.disconnect()
@@ -452,9 +451,9 @@ class TestPubSubAutoDecoding:
         new_data = self.data + 'new data'
         await o.publish(self.channel, new_data)
         assert await wait_for_message(p) is None
-        assert self.message == self.make_message('pmessage', self.channel,
-                                                 new_data,
-                                                 pattern=self.pattern)
+        assert worker.message == self.make_message('pmessage', self.channel,
+                                                   new_data,
+                                                   pattern=self.pattern)
 
 
 class TestPubSubRedisDown:

@@ -8,11 +8,11 @@ of how we've set this project up.
 Local Development
 ~~~~~~~~~~~~~~~~~
 
-We recommend working out of a virtual environment:
+You'll need `poetry`_ installed. Then, you can setup your environment with:
 
-- create and activate a virtual environment: ``python3 -m venv venv && source venv/bin/activate``
-- install test dependencies: ``pip install -r test_dependencies.txt``
-- install library from local path: ``pip install -e .``
+.. code-block:: console
+
+    poetry install
 
 Then, you can run any tests manually as described in the next section.
 
@@ -29,14 +29,14 @@ For example, you can run single-instance tests with:
 .. code-block:: console
 
     docker run --rm -d -p6379:6379 --name=redis redis:5
-    python3 -m pytest tests/client
+    poetry run pytest tests/client
 
 or cluster tests with:
 
 .. code-block:: console
 
     docker run --rm -d -p5000-5002:5000-5002 -p7000-7007:7000-7007 --name=redis-cluster grokzen/redis-cluster:5.0.5
-    python3 -m pytest tests/cluster
+    poetry run pytest tests/cluster
 
 Note that running the cluster tests on OSX is **currently not supported** since
 accessing the docker bridge network is not possible from your host machine.
@@ -97,6 +97,7 @@ If you are a maintainer looking to release a new version, see our
 .. _Pull Request: https://github.com/talkiq/gcloud-aio/pull/new/master
 .. _Release documentation: https://github.com/talkiq/gcloud-aio/blob/master/.github/RELEASE.rst
 .. _conventional changelog: https://github.com/conventional-changelog/conventional-changelog
+.. _poetry: https://python-poetry.org/
 .. _pre-commit: http://pre-commit.com/
 .. _pytest: https://pytest.readthedocs.io/en/latest/
 
