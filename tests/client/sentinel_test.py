@@ -1,16 +1,18 @@
-from __future__ import with_statement
 import pytest
-import yaaredis
 
-from yaaredis.exceptions import ConnectionError, TimeoutError
-from yaaredis.sentinel import (Sentinel, SentinelConnectionPool,
-                             MasterNotFoundError, SlaveNotFoundError)
+import yaaredis
+from yaaredis.exceptions import ConnectionError  # pylint: disable=redefined-builtin
+from yaaredis.exceptions import TimeoutError  # pylint: disable=redefined-builtin
+from yaaredis.sentinel import MasterNotFoundError
+from yaaredis.sentinel import Sentinel
+from yaaredis.sentinel import SentinelConnectionPool
+from yaaredis.sentinel import SlaveNotFoundError
 
 
 class SentinelTestClient:
-    def __init__(self, cluster, id):
+    def __init__(self, cluster, id_):
         self.cluster = cluster
-        self.id = id
+        self.id = id_
 
     async def sentinel_masters(self):
         self.cluster.connection_error_if_down(self)
@@ -53,7 +55,7 @@ class SentinelTestCluster:
         return SentinelTestClient(self, (host, port))
 
 
-@pytest.fixture()
+@pytest.fixture(scope='function')
 def cluster(request):
     def teardown():
         yaaredis.sentinel.StrictRedis = saved_StrictRedis
@@ -64,7 +66,7 @@ def cluster(request):
     return cluster
 
 
-@pytest.fixture()
+@pytest.fixture(scope='function')
 def sentinel(request, cluster, event_loop):
     return Sentinel([('foo', 26379), ('bar', 26379)], loop=event_loop)
 

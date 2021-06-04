@@ -1,13 +1,14 @@
 from ..exceptions import DataError
-from ..utils import (b, dict_merge,
-                          iteritems,
-                          first_key,
-                          string_keys_to_dict,
-                          list_or_args,
-                          pairs_to_dict)
+from ..utils import b
+from ..utils import dict_merge
+from ..utils import first_key
+from ..utils import iteritems
+from ..utils import list_or_args
+from ..utils import pairs_to_dict
+from ..utils import string_keys_to_dict
 
 
-def parse_hscan(response, **options):
+def parse_hscan(response, **_options):
     cursor, r = response
     return int(cursor), r and pairs_to_dict(r) or {}
 
@@ -21,7 +22,7 @@ class HashCommandMixin:
             'HGETALL': lambda r: r and pairs_to_dict(r) or {},
             'HINCRBYFLOAT': float,
             'HSCAN': parse_hscan,
-        }
+        },
     )
 
     async def hdel(self, name, *keys):
@@ -124,5 +125,5 @@ class HashCommandMixin:
 class ClusterHashCommandMixin(HashCommandMixin):
 
     RESULT_CALLBACKS = {
-        'HSCAN': first_key
+        'HSCAN': first_key,
     }

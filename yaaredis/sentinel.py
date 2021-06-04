@@ -4,10 +4,13 @@ import weakref
 
 from .client import StrictRedis
 from .connection import Connection
+from .exceptions import ConnectionError  # pylint: disable=redefined-builtin
+from .exceptions import ReadOnlyError
+from .exceptions import ResponseError
+from .exceptions import TimeoutError  # pylint: disable=redefined-builtin
 from .pool import ConnectionPool
-from .exceptions import (ConnectionError, ResponseError, ReadOnlyError,
-                               TimeoutError)
-from .utils import iteritems, nativestr
+from .utils import iteritems
+from .utils import nativestr
 
 
 class MasterNotFoundError(ConnectionError):
@@ -21,20 +24,21 @@ class SlaveNotFoundError(ConnectionError):
 class SentinelManagedConnection(Connection):
     def __init__(self, **kwargs):
         self.connection_pool = kwargs.pop('connection_pool')
-        super(SentinelManagedConnection, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     def __repr__(self):
         pool = self.connection_pool
         if self.host:
-            host_info = ',host=%s,port=%s' % (self.host, self.port)
+            host_info = ',host={},port={}'.format(self.host, self.port)
         else:
             host_info = ''
-        s = '{}<service={}{}>'.format(type(self).__name__, pool.service_name, host_info)
+        s = '{}<service={}{}>'.format(
+            type(self).__name__, pool.service_name, host_info)
         return s
 
     async def connect_to(self, address):
         self.host, self.port = address
-        await super(SentinelManagedConnection, self).connect()
+        await super().connect()
         if self.connection_pool.check_connection:
             await self.send_command('PING')
             if nativestr(await self.read_response()) != 'PONG':
@@ -43,8 +47,10 @@ class SentinelManagedConnection(Connection):
     async def connect(self):
         if self._reader and self._writer:
             return  # already connected
+
         if self.connection_pool.is_master:
-            await self.connect_to(await self.connection_pool.get_master_address())
+            await self.connect_to(
+                await self.connection_pool.get_master_address())
         else:
             for slave in await self.connection_pool.rotate_slaves():
                 try:
@@ -55,8 +61,8 @@ class SentinelManagedConnection(Connection):
 
     async def read_response(self):
         try:
-            return await super(SentinelManagedConnection, self).read_response()
-        except ReadOnlyError:
+            return await super().read_response()
+        except ReadOnlyError as e:
             if self.connection_pool.is_master:
                 # When talking to a master, a ReadOnlyError when likely
                 # indicates that the previous master that we're still connected
@@ -64,7 +70,8 @@ class SentinelManagedConnection(Connection):
                 # calling disconnect will force the connection to re-query
                 # sentinel during the next connect() attempt.
                 self.disconnect()
-                raise ConnectionError('The previous master is now a slave')
+                raise ConnectionError(
+                    'The previous master is now a slave') from e
             raise
 
 
@@ -81,20 +88,20 @@ class SentinelConnectionPool(ConnectionPool):
             'connection_class', SentinelManagedConnection)
         self.is_master = kwargs.pop('is_master', True)
         self.check_connection = kwargs.pop('check_connection', False)
-        super(SentinelConnectionPool, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.connection_kwargs['connection_pool'] = weakref.proxy(self)
         self.service_name = service_name
         self.sentinel_manager = sentinel_manager
 
     def __repr__(self):
-        return "{}<service={}({})".format(
+        return '{}<service={}({})'.format(
             type(self).__name__,
             self.service_name,
             self.is_master and 'master' or 'slave',
         )
 
     def reset(self):
-        super(SentinelConnectionPool, self).reset()
+        super().reset()
         self.master_address = None
         self.slave_rr_counter = None
 
@@ -112,12 +119,13 @@ class SentinelConnectionPool(ConnectionPool):
     async def rotate_slaves(self):
         """Round-robin slave balancer"""
         slaves = await self.sentinel_manager.discover_slaves(self.service_name)
-        slave_address = list()
+        slave_address = []
         if slaves:
             if self.slave_rr_counter is None:
                 self.slave_rr_counter = random.randint(0, len(slaves) - 1)
             for _ in range(len(slaves)):
-                self.slave_rr_counter = (self.slave_rr_counter + 1) % len(slaves)
+                self.slave_rr_counter = (
+                    self.slave_rr_counter + 1) % len(slaves)
                 slave_address.append(slaves[self.slave_rr_counter])
             return slave_address
         # Fallback to the master connection
@@ -173,10 +181,8 @@ class Sentinel:
         # if sentinel_kwargs isn't defined, use the socket_* options from
         # connection_kwargs
         if sentinel_kwargs is None:
-            sentinel_kwargs = dict([(k, v)
-                                    for k, v in iteritems(connection_kwargs)
-                                    if k.startswith('socket_')
-                                    ])
+            sentinel_kwargs = {k: v for k, v in iteritems(connection_kwargs)
+                               if k.startswith('socket_')}
         self.sentinel_kwargs = sentinel_kwargs
 
         self.sentinels = [StrictRedis(hostname, port, **self.sentinel_kwargs)
@@ -222,9 +228,11 @@ class Sentinel:
                 self.sentinels[0], self.sentinels[sentinel_no] = (
                     sentinel, self.sentinels[0])
                 return state['ip'], state['port']
-        raise MasterNotFoundError("No master found for %r" % (service_name,))
+        raise MasterNotFoundError(
+            'No master found for {!r}'.format(service_name))
 
-    def filter_slaves(self, slaves):
+    @staticmethod
+    def filter_slaves(slaves):
         """Removes slaves that are in an ODOWN or SDOWN state"""
         slaves_alive = []
         for slave in slaves:

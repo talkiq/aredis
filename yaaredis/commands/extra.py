@@ -1,17 +1,20 @@
-from ..lock import Lock, LuaLock
-from ..cache import (Cache, IdentityGenerator,
-                          Serializer, Compressor)
+from ..cache import Cache
+from ..cache import Compressor
+from ..cache import IdentityGenerator
+from ..cache import Serializer
 from ..exceptions import ResponseError
+from ..lock import Lock
+from ..lock import LuaLock
 
 
 class ExtraCommandMixin:
 
     RESPONSE_CALLBACKS = {}
 
-    def cache(self, name, cache_class=Cache,
+    def cache(self, name, *args, cache_class=Cache,
               identity_generator_class=IdentityGenerator,
-              compressor_class=Compressor,
-              serializer_class=Serializer, *args, **kwargs):
+              compressor_class=Compressor, serializer_class=Serializer,
+              **kwargs):
         """
         Return a cache object using default identity generator,
         serializer and compressor.
@@ -88,7 +91,7 @@ class ExtraCommandMixin:
                     self._use_lua_lock = True
                 except ResponseError:
                     self._use_lua_lock = False
-            lock_class = self._use_lua_lock and LuaLock or Lock
+            lock_class = LuaLock if self._use_lua_lock else Lock
         return lock_class(self, name, timeout=timeout, sleep=sleep,
                           blocking_timeout=blocking_timeout,
                           thread_local=thread_local)

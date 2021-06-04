@@ -1,42 +1,46 @@
-from __future__ import with_statement
+# pylint: disable=too-many-lines
 import binascii
 import datetime
-import pytest
-import yaaredis
 import time
 from string import ascii_letters
 
-from yaaredis.utils import (b, iteritems,
-                          iterkeys, itervalues)
-from yaaredis.commands.server import parse_info
-from yaaredis.exceptions import (RedisError,
-                               ResponseError,
-                               DataError)
+import pytest
 
-from .conftest import (skip_if_server_version_lt,
-                       skip_python_vsersion_lt)
+import yaaredis
+from .conftest import skip_if_server_version_lt
+from .conftest import skip_python_version_lt
+from yaaredis.commands.server import parse_info
+from yaaredis.exceptions import DataError
+from yaaredis.exceptions import RedisError
+from yaaredis.exceptions import ResponseError
+from yaaredis.utils import b
+from yaaredis.utils import iteritems
+from yaaredis.utils import iterkeys
+from yaaredis.utils import itervalues
 
 
 async def redis_server_time(client):
     seconds, milliseconds = await client.time()
-    timestamp = float('%s.%s' % (seconds, milliseconds))
+    timestamp = float('{}.{}'.format(seconds, milliseconds))
     return datetime.datetime.fromtimestamp(timestamp)
 
 
 # RESPONSE CALLBACKS
 class TestResponseCallbacks:
-    "Tests for the response callback system"
+    'Tests for the response callback system'
 
     @pytest.mark.asyncio(forbid_global_loop=True)
     async def test_response_callbacks(self, r):
         assert r.response_callbacks == yaaredis.StrictRedis.RESPONSE_CALLBACKS
-        assert id(r.response_callbacks) != id(yaaredis.StrictRedis.RESPONSE_CALLBACKS)
+        assert id(r.response_callbacks) != id(
+            yaaredis.StrictRedis.RESPONSE_CALLBACKS)
         r.set_response_callback('GET', lambda x: 'static')
         await r.set('a', 'foo')
         assert await r.get('a') == 'static'
 
 
 class TestRedisCommands:
+    # pylint: disable=too-many-public-methods
 
     @pytest.mark.asyncio(forbid_global_loop=True)
     async def test_command_on_invalid_key_type(self, r):
@@ -323,9 +327,9 @@ class TestRedisCommands:
         key = 'key:bitpos:wrong:args'
         await r.set(key, b('\xff\xf0\x00'))
         with pytest.raises(RedisError):
-            await r.bitpos(key, 0, end=1) == 12
+            await r.bitpos(key, 0, end=1)
         with pytest.raises(RedisError):
-            await r.bitpos(key, 7) == 12
+            await r.bitpos(key, 7)
 
     @skip_if_server_version_lt('3.2.0')
     @pytest.mark.asyncio(forbid_global_loop=True)
@@ -336,7 +340,7 @@ class TestRedisCommands:
 
     @skip_if_server_version_lt('3.2.0')
     @pytest.mark.asyncio(forbid_global_loop=True)
-    async def test_bitfield_set(self, r):
+    async def test_bitfield_get(self, r):
         key = 'key:bitfield:get'
         await r.set(key, '\x00d')
         assert [100] == await r.bitfield(key).get('i8', '#1').exc()
@@ -862,8 +866,8 @@ class TestRedisCommands:
         assert await r.linsert('a', 'after', '2', '2.5') == 4
         assert await r.lrange('a', 0, -1) == [b('1'), b('2'), b('2.5'), b('3')]
         assert await r.linsert('a', 'before', '2', '1.5') == 5
-        assert await r.lrange('a', 0, -1) == \
-            [b('1'), b('1.5'), b('2'), b('2.5'), b('3')]
+        expected = [b('1'), b('1.5'), b('2'), b('2.5'), b('3')]
+        assert await r.lrange('a', 0, -1) == expected
 
     @pytest.mark.asyncio(forbid_global_loop=True)
     async def test_llen(self, r):
@@ -974,12 +978,12 @@ class TestRedisCommands:
         await r.set('c', 3)
         cursor, keys = await r.scan()
         assert cursor == 0
-        assert set(keys) == set([b('a'), b('b'), b('c')])
+        assert set(keys) == {b('a'), b('b'), b('c')}
         _, keys = await r.scan(match='a')
-        assert set(keys) == set([b('a')])
+        assert set(keys) == {b('a')}
 
     @skip_if_server_version_lt('2.8.0')
-    @skip_python_vsersion_lt('3.6')
+    @skip_python_version_lt('3.6')
     @pytest.mark.asyncio(forbid_global_loop=True)
     async def test_scan_iter(self, r):
         await r.flushdb()
@@ -989,7 +993,7 @@ class TestRedisCommands:
         keys = set()
         async for key in r.scan_iter():
             keys.add(key)
-        assert keys == set([b('a'), b('b'), b('c')])
+        assert keys == {b('a'), b('b'), b('c')}
         async for key in r.scan_iter(match='a'):
             assert key == b('a')
 
@@ -1000,12 +1004,12 @@ class TestRedisCommands:
         await r.sadd('a', 1, 2, 3)
         cursor, members = await r.sscan('a')
         assert cursor == 0
-        assert set(members) == set([b('1'), b('2'), b('3')])
+        assert set(members) == {b('1'), b('2'), b('3')}
         _, members = await r.sscan('a', match=b('1'))
-        assert set(members) == set([b('1')])
+        assert set(members) == {b('1')}
 
     @skip_if_server_version_lt('2.8.0')
-    @skip_python_vsersion_lt('3.6')
+    @skip_python_version_lt('3.6')
     @pytest.mark.asyncio(forbid_global_loop=True)
     async def test_sscan_iter(self, r):
         await r.flushdb()
@@ -1013,7 +1017,7 @@ class TestRedisCommands:
         members = set()
         async for member in r.sscan_iter('a'):
             members.add(member)
-        assert members == set([b('1'), b('2'), b('3')])
+        assert members == {b('1'), b('2'), b('3')}
         async for member in r.sscan_iter('a', match=b('1')):
             assert member == b('1')
 
@@ -1029,12 +1033,12 @@ class TestRedisCommands:
         assert dic == {b('a'): b('1')}
 
     @skip_if_server_version_lt('2.8.0')
-    @skip_python_vsersion_lt('3.6')
+    @skip_python_version_lt('3.6')
     @pytest.mark.asyncio(forbid_global_loop=True)
     async def test_hscan_iter(self, r):
         await r.flushdb()
         await r.hmset('a', {'a': 1, 'b': 2, 'c': 3})
-        dic = dict()
+        dic = {}
         async for data in r.hscan_iter('a'):
             dic.update(dict([data]))
         assert dic == {b('a'): b('1'), b('b'): b('2'), b('c'): b('3')}
@@ -1048,19 +1052,19 @@ class TestRedisCommands:
         await r.zadd('a', 1, 'a', 2, 'b', 3, 'c')
         cursor, pairs = await r.zscan('a')
         assert cursor == 0
-        assert set(pairs) == set([(b('a'), 1), (b('b'), 2), (b('c'), 3)])
+        assert set(pairs) == {(b('a'), 1), (b('b'), 2), (b('c'), 3)}
         _, pairs = await r.zscan('a', match='a')
-        assert set(pairs) == set([(b('a'), 1)])
+        assert set(pairs) == {(b('a'), 1)}
 
     @skip_if_server_version_lt('2.8.0')
-    @skip_python_vsersion_lt('3.6')
+    @skip_python_version_lt('3.6')
     @pytest.mark.asyncio(forbid_global_loop=True)
     async def test_zscan_iter(self, r):
         await r.zadd('a', 1, 'a', 2, 'b', 3, 'c')
         pairs = set()
         async for pair in r.zscan_iter('a'):
             pairs.add(pair)
-        assert pairs == set([(b('a'), 1), (b('b'), 2), (b('c'), 3)])
+        assert pairs == {(b('a'), 1), (b('b'), 2), (b('c'), 3)}
         async for pair in r.zscan_iter('a', match='a'):
             assert pair == (b('a'), 1)
 
@@ -1068,7 +1072,7 @@ class TestRedisCommands:
     @pytest.mark.asyncio(forbid_global_loop=True)
     async def test_sadd(self, r):
         await r.flushdb()
-        members = set([b('1'), b('2'), b('3')])
+        members = {b('1'), b('2'), b('3')}
         await r.sadd('a', *members)
         assert await r.smembers('a') == members
 
@@ -1082,19 +1086,19 @@ class TestRedisCommands:
     async def test_sdiff(self, r):
         await r.flushdb()
         await r.sadd('a', '1', '2', '3')
-        assert await r.sdiff('a', 'b') == set([b('1'), b('2'), b('3')])
+        assert await r.sdiff('a', 'b') == {b('1'), b('2'), b('3')}
         await r.sadd('b', '2', '3')
-        assert await r.sdiff('a', 'b') == set([b('1')])
+        assert await r.sdiff('a', 'b') == {b('1')}
 
     @pytest.mark.asyncio(forbid_global_loop=True)
     async def test_sdiffstore(self, r):
         await r.flushdb()
         await r.sadd('a', '1', '2', '3')
         assert await r.sdiffstore('c', 'a', 'b') == 3
-        assert await r.smembers('c') == set([b('1'), b('2'), b('3')])
+        assert await r.smembers('c') == {b('1'), b('2'), b('3')}
         await r.sadd('b', '2', '3')
         assert await r.sdiffstore('c', 'a', 'b') == 1
-        assert await r.smembers('c') == set([b('1')])
+        assert await r.smembers('c') == {b('1')}
 
     @pytest.mark.asyncio(forbid_global_loop=True)
     async def test_sinter(self, r):
@@ -1102,7 +1106,7 @@ class TestRedisCommands:
         await r.sadd('a', '1', '2', '3')
         assert await r.sinter('a', 'b') == set()
         await r.sadd('b', '2', '3')
-        assert await r.sinter('a', 'b') == set([b('2'), b('3')])
+        assert await r.sinter('a', 'b') == {b('2'), b('3')}
 
     @pytest.mark.asyncio(forbid_global_loop=True)
     async def test_sinterstore(self, r):
@@ -1112,7 +1116,7 @@ class TestRedisCommands:
         assert await r.smembers('c') == set()
         await r.sadd('b', '2', '3')
         assert await r.sinterstore('c', 'a', 'b') == 2
-        assert await r.smembers('c') == set([b('2'), b('3')])
+        assert await r.smembers('c') == {b('2'), b('3')}
 
     @pytest.mark.asyncio(forbid_global_loop=True)
     async def test_sismember(self, r):
@@ -1127,7 +1131,7 @@ class TestRedisCommands:
     async def test_smembers(self, r):
         await r.flushdb()
         await r.sadd('a', '1', '2', '3')
-        assert await r.smembers('a') == set([b('1'), b('2'), b('3')])
+        assert await r.smembers('a') == {b('1'), b('2'), b('3')}
 
     @pytest.mark.asyncio(forbid_global_loop=True)
     async def test_smove(self, r):
@@ -1135,8 +1139,8 @@ class TestRedisCommands:
         await r.sadd('a', 'a1', 'a2')
         await r.sadd('b', 'b1', 'b2')
         assert await r.smove('a', 'b', 'a1')
-        assert await r.smembers('a') == set([b('a2')])
-        assert await r.smembers('b') == set([b('b1'), b('b2'), b('a1')])
+        assert await r.smembers('a') == {b('a2')}
+        assert await r.smembers('b') == {b('b1'), b('b2'), b('a1')}
 
     @pytest.mark.asyncio(forbid_global_loop=True)
     async def test_spop(self, r):
@@ -1144,7 +1148,7 @@ class TestRedisCommands:
         s = [b('1'), b('2'), b('3')]
         await r.sadd('a', *s)
         value = await r.spop('a')
-        assert set(await r.smembers('a')) == set(s) - set([value])
+        assert set(await r.smembers('a')) == set(s) - {value}
 
     @skip_if_server_version_lt('3.2.0')
     @pytest.mark.asyncio(forbid_global_loop=True)
@@ -1178,14 +1182,14 @@ class TestRedisCommands:
         await r.sadd('a', '1', '2', '3', '4')
         assert await r.srem('a', '5') == 0
         assert await r.srem('a', '2', '4') == 2
-        assert await r.smembers('a') == set([b('1'), b('3')])
+        assert await r.smembers('a') == {b('1'), b('3')}
 
     @pytest.mark.asyncio(forbid_global_loop=True)
     async def test_sunion(self, r):
         await r.flushdb()
         await r.sadd('a', '1', '2')
         await r.sadd('b', '2', '3')
-        assert await r.sunion('a', 'b') == set([b('1'), b('2'), b('3')])
+        assert await r.sunion('a', 'b') == {b('1'), b('2'), b('3')}
 
     @pytest.mark.asyncio(forbid_global_loop=True)
     async def test_sunionstore(self, r):
@@ -1193,7 +1197,7 @@ class TestRedisCommands:
         await r.sadd('a', '1', '2')
         await r.sadd('b', '2', '3')
         assert await r.sunionstore('c', 'a', 'b') == 3
-        assert await r.smembers('c') == set([b('1'), b('2'), b('3')])
+        assert await r.smembers('c') == {b('1'), b('2'), b('3')}
 
     # SORTED SET COMMANDS
     @pytest.mark.asyncio(forbid_global_loop=True)
@@ -1211,7 +1215,7 @@ class TestRedisCommands:
         assert int(await r.zaddoption('a', 'NX CH', a1=2)) == 0
         assert int(await r.zscore('a', 'a1')) == 1
         assert await r.zcard('a') == 1
-        assert int (await r.zaddoption('a', 'XX', a2=1)) == 0
+        assert int(await r.zaddoption('a', 'XX', a2=1)) == 0
         assert await r.zcard('a') == 1
         assert int(await r.zaddoption('a', 'XX', a1=2)) == 0
         assert int(await r.zaddoption('a', 'XX CH', a1=3)) == 1
@@ -1260,8 +1264,8 @@ class TestRedisCommands:
         await r.zadd('b', a1=2, a2=2, a3=2)
         await r.zadd('c', a1=6, a3=5, a4=4)
         assert await r.zinterstore('d', ['a', 'b', 'c']) == 2
-        assert await r.zrange('d', 0, -1, withscores=True) == \
-            [(b('a3'), 8), (b('a1'), 9)]
+        expected = [(b('a3'), 8), (b('a1'), 9)]
+        assert await r.zrange('d', 0, -1, withscores=True) == expected
 
     @pytest.mark.asyncio(forbid_global_loop=True)
     async def test_zinterstore_max(self, r):
@@ -1270,8 +1274,8 @@ class TestRedisCommands:
         await r.zadd('b', a1=2, a2=2, a3=2)
         await r.zadd('c', a1=6, a3=5, a4=4)
         assert await r.zinterstore('d', ['a', 'b', 'c'], aggregate='MAX') == 2
-        assert await r.zrange('d', 0, -1, withscores=True) == \
-            [(b('a3'), 5), (b('a1'), 6)]
+        expected = [(b('a3'), 5), (b('a1'), 6)]
+        assert await r.zrange('d', 0, -1, withscores=True) == expected
 
     @pytest.mark.asyncio(forbid_global_loop=True)
     async def test_zinterstore_min(self, r):
@@ -1280,8 +1284,8 @@ class TestRedisCommands:
         await r.zadd('b', a1=2, a2=3, a3=5)
         await r.zadd('c', a1=6, a3=5, a4=4)
         assert await r.zinterstore('d', ['a', 'b', 'c'], aggregate='MIN') == 2
-        assert await r.zrange('d', 0, -1, withscores=True) == \
-            [(b('a1'), 1), (b('a3'), 3)]
+        expected = [(b('a1'), 1), (b('a3'), 3)]
+        assert await r.zrange('d', 0, -1, withscores=True) == expected
 
     @pytest.mark.asyncio(forbid_global_loop=True)
     async def test_zinterstore_with_weight(self, r):
@@ -1290,8 +1294,8 @@ class TestRedisCommands:
         await r.zadd('b', a1=2, a2=2, a3=2)
         await r.zadd('c', a1=6, a3=5, a4=4)
         assert await r.zinterstore('d', {'a': 1, 'b': 2, 'c': 3}) == 2
-        assert await r.zrange('d', 0, -1, withscores=True) == \
-            [(b('a3'), 20), (b('a1'), 23)]
+        expected = [(b('a3'), 20), (b('a1'), 23)]
+        assert await r.zrange('d', 0, -1, withscores=True) == expected
 
     @pytest.mark.asyncio(forbid_global_loop=True)
     async def test_zrange(self, r):
@@ -1301,14 +1305,14 @@ class TestRedisCommands:
         assert await r.zrange('a', 1, 2) == [b('a2'), b('a3')]
 
         # withscores
-        assert await r.zrange('a', 0, 1, withscores=True) == \
-            [(b('a1'), 1.0), (b('a2'), 2.0)]
-        assert await r.zrange('a', 1, 2, withscores=True) == \
-            [(b('a2'), 2.0), (b('a3'), 3.0)]
+        expected = [(b('a1'), 1.0), (b('a2'), 2.0)]
+        assert await r.zrange('a', 0, 1, withscores=True) == expected
+        expected = [(b('a2'), 2.0), (b('a3'), 3.0)]
+        assert await r.zrange('a', 1, 2, withscores=True) == expected
 
         # custom score function
-        assert await r.zrange('a', 0, 1, withscores=True, score_cast_func=int) == \
-            [(b('a1'), 1), (b('a2'), 2)]
+        expected = [(b('a1'), 1), (b('a2'), 2)]
+        assert await r.zrange('a', 0, 1, withscores=True, score_cast_func=int) == expected
 
     @skip_if_server_version_lt('2.8.9')
     @pytest.mark.asyncio(forbid_global_loop=True)
@@ -1317,8 +1321,8 @@ class TestRedisCommands:
         await r.zadd('a', a=0, b=0, c=0, d=0, e=0, f=0, g=0)
         assert await r.zrangebylex('a', '-', '[c') == [b('a'), b('b'), b('c')]
         assert await r.zrangebylex('a', '-', '(c') == [b('a'), b('b')]
-        assert await r.zrangebylex('a', '[aaa', '(g') == \
-            [b('b'), b('c'), b('d'), b('e'), b('f')]
+        expected = [b('b'), b('c'), b('d'), b('e'), b('f')]
+        assert await r.zrangebylex('a', '[aaa', '(g') == expected
         assert await r.zrangebylex('a', '[f', '+') == [b('f'), b('g')]
         assert await r.zrangebylex('a', '-', '+', start=3, num=2) == [b('d'), b('e')]
 
@@ -1329,11 +1333,11 @@ class TestRedisCommands:
         await r.zadd('a', a=0, b=0, c=0, d=0, e=0, f=0, g=0)
         assert await r.zrevrangebylex('a', '[c', '-') == [b('c'), b('b'), b('a')]
         assert await r.zrevrangebylex('a', '(c', '-') == [b('b'), b('a')]
-        assert await r.zrevrangebylex('a', '(g', '[aaa') == \
-            [b('f'), b('e'), b('d'), b('c'), b('b')]
+        expected = [b('f'), b('e'), b('d'), b('c'), b('b')]
+        assert await r.zrevrangebylex('a', '(g', '[aaa') == expected
         assert await r.zrevrangebylex('a', '+', '[f') == [b('g'), b('f')]
-        assert await r.zrevrangebylex('a', '+', '-', start=3, num=2) == \
-            [b('d'), b('c')]
+        expected = [b('d'), b('c')]
+        assert await r.zrevrangebylex('a', '+', '-', start=3, num=2) == expected
 
     @pytest.mark.asyncio(forbid_global_loop=True)
     async def test_zrangebyscore(self, r):
@@ -1342,17 +1346,17 @@ class TestRedisCommands:
         assert await r.zrangebyscore('a', 2, 4) == [b('a2'), b('a3'), b('a4')]
 
         # slicing with start/num
-        assert await r.zrangebyscore('a', 2, 4, start=1, num=2) == \
-            [b('a3'), b('a4')]
+        expected = [b('a3'), b('a4')]
+        assert await r.zrangebyscore('a', 2, 4, start=1, num=2) == expected
 
         # withscores
-        assert await r.zrangebyscore('a', 2, 4, withscores=True) == \
-            [(b('a2'), 2.0), (b('a3'), 3.0), (b('a4'), 4.0)]
+        expected = [(b('a2'), 2.0), (b('a3'), 3.0), (b('a4'), 4.0)]
+        assert await r.zrangebyscore('a', 2, 4, withscores=True) == expected
 
         # custom score function
+        expected = [(b('a2'), 2), (b('a3'), 3), (b('a4'), 4)]
         assert await r.zrangebyscore('a', 2, 4, withscores=True,
-                               score_cast_func=int) == \
-            [(b('a2'), 2), (b('a3'), 3), (b('a4'), 4)]
+                                     score_cast_func=int) == expected
 
     @pytest.mark.asyncio(forbid_global_loop=True)
     async def test_zrank(self, r):
@@ -1414,15 +1418,15 @@ class TestRedisCommands:
         assert await r.zrevrange('a', 1, 2) == [b('a2'), b('a1')]
 
         # withscores
-        assert await r.zrevrange('a', 0, 1, withscores=True) == \
-            [(b('a3'), 3.0), (b('a2'), 2.0)]
-        assert await r.zrevrange('a', 1, 2, withscores=True) == \
-            [(b('a2'), 2.0), (b('a1'), 1.0)]
+        expected = [(b('a3'), 3.0), (b('a2'), 2.0)]
+        assert await r.zrevrange('a', 0, 1, withscores=True) == expected
+        expected = [(b('a2'), 2.0), (b('a1'), 1.0)]
+        assert await r.zrevrange('a', 1, 2, withscores=True) == expected
 
         # custom score function
+        expected = [(b('a3'), 3.0), (b('a2'), 2.0)]
         assert await r.zrevrange('a', 0, 1, withscores=True,
-                           score_cast_func=int) == \
-            [(b('a3'), 3.0), (b('a2'), 2.0)]
+                                 score_cast_func=int) == expected
 
     @pytest.mark.asyncio(forbid_global_loop=True)
     async def test_zrevrangebyscore(self, r):
@@ -1431,17 +1435,17 @@ class TestRedisCommands:
         assert await r.zrevrangebyscore('a', 4, 2) == [b('a4'), b('a3'), b('a2')]
 
         # slicing with start/num
-        assert await r.zrevrangebyscore('a', 4, 2, start=1, num=2) == \
-            [b('a3'), b('a2')]
+        expected = [b('a3'), b('a2')]
+        assert await r.zrevrangebyscore('a', 4, 2, start=1, num=2) == expected
 
         # withscores
-        assert await r.zrevrangebyscore('a', 4, 2, withscores=True) == \
-            [(b('a4'), 4.0), (b('a3'), 3.0), (b('a2'), 2.0)]
+        expected = [(b('a4'), 4.0), (b('a3'), 3.0), (b('a2'), 2.0)]
+        assert await r.zrevrangebyscore('a', 4, 2, withscores=True) == expected
 
         # custom score function
+        expected = [(b('a4'), 4), (b('a3'), 3), (b('a2'), 2)]
         assert await r.zrevrangebyscore('a', 4, 2, withscores=True,
-                                  score_cast_func=int) == \
-            [(b('a4'), 4), (b('a3'), 3), (b('a2'), 2)]
+                                        score_cast_func=int) == expected
 
     @pytest.mark.asyncio(forbid_global_loop=True)
     async def test_zrevrank(self, r):
@@ -1466,8 +1470,8 @@ class TestRedisCommands:
         await r.zadd('b', a1=2, a2=2, a3=2)
         await r.zadd('c', a1=6, a3=5, a4=4)
         assert await r.zunionstore('d', ['a', 'b', 'c']) == 4
-        assert await r.zrange('d', 0, -1, withscores=True) == \
-            [(b('a2'), 3), (b('a4'), 4), (b('a3'), 8), (b('a1'), 9)]
+        expected = [(b('a2'), 3), (b('a4'), 4), (b('a3'), 8), (b('a1'), 9)]
+        assert await r.zrange('d', 0, -1, withscores=True) == expected
 
     @pytest.mark.asyncio(forbid_global_loop=True)
     async def test_zunionstore_max(self, r):
@@ -1476,8 +1480,8 @@ class TestRedisCommands:
         await r.zadd('b', a1=2, a2=2, a3=2)
         await r.zadd('c', a1=6, a3=5, a4=4)
         assert await r.zunionstore('d', ['a', 'b', 'c'], aggregate='MAX') == 4
-        assert await r.zrange('d', 0, -1, withscores=True) == \
-            [(b('a2'), 2), (b('a4'), 4), (b('a3'), 5), (b('a1'), 6)]
+        expected = [(b('a2'), 2), (b('a4'), 4), (b('a3'), 5), (b('a1'), 6)]
+        assert await r.zrange('d', 0, -1, withscores=True) == expected
 
     @pytest.mark.asyncio(forbid_global_loop=True)
     async def test_zunionstore_min(self, r):
@@ -1486,8 +1490,8 @@ class TestRedisCommands:
         await r.zadd('b', a1=2, a2=2, a3=4)
         await r.zadd('c', a1=6, a3=5, a4=4)
         assert await r.zunionstore('d', ['a', 'b', 'c'], aggregate='MIN') == 4
-        assert await r.zrange('d', 0, -1, withscores=True) == \
-            [(b('a1'), 1), (b('a2'), 2), (b('a3'), 3), (b('a4'), 4)]
+        expected = [(b('a1'), 1), (b('a2'), 2), (b('a3'), 3), (b('a4'), 4)]
+        assert await r.zrange('d', 0, -1, withscores=True) == expected
 
     @pytest.mark.asyncio(forbid_global_loop=True)
     async def test_zunionstore_with_weight(self, r):
@@ -1496,15 +1500,15 @@ class TestRedisCommands:
         await r.zadd('b', a1=2, a2=2, a3=2)
         await r.zadd('c', a1=6, a3=5, a4=4)
         assert await r.zunionstore('d', {'a': 1, 'b': 2, 'c': 3}) == 4
-        assert await r.zrange('d', 0, -1, withscores=True) == \
-            [(b('a2'), 5), (b('a4'), 12), (b('a3'), 20), (b('a1'), 23)]
+        expected = [(b('a2'), 5), (b('a4'), 12), (b('a3'), 20), (b('a1'), 23)]
+        assert await r.zrange('d', 0, -1, withscores=True) == expected
 
     # HYPERLOGLOG TESTS
     @skip_if_server_version_lt('2.8.9')
     @pytest.mark.asyncio(forbid_global_loop=True)
     async def test_pfadd(self, r):
         await r.flushdb()
-        members = set([b('1'), b('2'), b('3')])
+        members = {b('1'), b('2'), b('3')}
         assert await r.pfadd('a', *members) == 1
         assert await r.pfadd('a', *members) == 0
         assert await r.pfcount('a') == len(members)
@@ -1513,10 +1517,10 @@ class TestRedisCommands:
     @pytest.mark.asyncio(forbid_global_loop=True)
     async def test_pfcount(self, r):
         await r.flushdb()
-        members = set([b('1'), b('2'), b('3')])
+        members = {b('1'), b('2'), b('3')}
         await r.pfadd('a', *members)
         assert await r.pfcount('a') == len(members)
-        members_b = set([b('2'), b('3'), b('4')])
+        members_b = {b('2'), b('3'), b('4')}
         await r.pfadd('b', *members_b)
         assert await r.pfcount('b') == len(members_b)
         assert await r.pfcount('a', 'b') == len(members_b.union(members))
@@ -1525,9 +1529,9 @@ class TestRedisCommands:
     @pytest.mark.asyncio(forbid_global_loop=True)
     async def test_pfmerge(self, r):
         await r.flushdb()
-        mema = set([b('1'), b('2'), b('3')])
-        memb = set([b('2'), b('3'), b('4')])
-        memc = set([b('5'), b('6'), b('7')])
+        mema = {b('1'), b('2'), b('3')}
+        memb = {b('2'), b('3'), b('4')}
+        memc = {b('5'), b('6'), b('7')}
         await r.pfadd('a', *mema)
         await r.pfadd('b', *memb)
         await r.pfadd('c', *memc)
@@ -1601,7 +1605,7 @@ class TestRedisCommands:
         await r.hmset('a', h)
         local_keys = list(iterkeys(h))
         remote_keys = await r.hkeys('a')
-        assert (sorted(local_keys) == sorted(remote_keys))
+        assert sorted(local_keys) == sorted(remote_keys)
 
     @pytest.mark.asyncio(forbid_global_loop=True)
     async def test_hlen(self, r):
@@ -1691,8 +1695,8 @@ class TestRedisCommands:
         await r.set('user:2', 'u2')
         await r.set('user:3', 'u3')
         await r.rpush('a', '2', '3', '1')
-        assert await r.sort('a', get=('user:*', '#')) == \
-            [b('u1'), b('1'), b('u2'), b('2'), b('u3'), b('3')]
+        expected = [b('u1'), b('1'), b('u2'), b('2'), b('u3'), b('3')]
+        assert await r.sort('a', get=('user:*', '#')) == expected
 
     @pytest.mark.asyncio(forbid_global_loop=True)
     async def test_sort_get_groups_two(self, r):
@@ -1701,8 +1705,8 @@ class TestRedisCommands:
         await r.set('user:2', 'u2')
         await r.set('user:3', 'u3')
         await r.rpush('a', '2', '3', '1')
-        assert await r.sort('a', get=('user:*', '#'), groups=True) == \
-            [(b('u1'), b('1')), (b('u2'), b('2')), (b('u3'), b('3'))]
+        expected = [(b('u1'), b('1')), (b('u2'), b('2')), (b('u3'), b('3'))]
+        assert await r.sort('a', get=('user:*', '#'), groups=True) == expected
 
     @pytest.mark.asyncio(forbid_global_loop=True)
     async def test_sort_groups_string_get(self, r):
@@ -1744,12 +1748,13 @@ class TestRedisCommands:
         await r.set('door:2', 'd2')
         await r.set('door:3', 'd3')
         await r.rpush('a', '2', '3', '1')
-        assert await r.sort('a', get=('user:*', 'door:*', '#'), groups=True) == \
-            [
-                (b('u1'), b('d1'), b('1')),
-                (b('u2'), b('d2'), b('2')),
-                (b('u3'), b('d3'), b('3'))
+        expected = [
+            (b('u1'), b('d1'), b('1')),
+            (b('u2'), b('d2'), b('2')),
+            (b('u3'), b('d3'), b('3')),
         ]
+        assert await r.sort('a', get=('user:*', 'door:*', '#'),
+                            groups=True) == expected
 
     @pytest.mark.asyncio(forbid_global_loop=True)
     async def test_sort_desc(self, r):
@@ -1761,8 +1766,8 @@ class TestRedisCommands:
     async def test_sort_alpha(self, r):
         await r.flushdb()
         await r.rpush('a', 'e', 'c', 'b', 'd', 'a')
-        assert await r.sort('a', alpha=True) == \
-            [b('a'), b('b'), b('c'), b('d'), b('e')]
+        expected = [b('a'), b('b'), b('c'), b('d'), b('e')]
+        assert await r.sort('a', alpha=True) == expected
 
     @pytest.mark.asyncio(forbid_global_loop=True)
     async def test_sort_store(self, r):
@@ -1794,19 +1799,19 @@ class TestRedisCommands:
 
         await r.rpush('gods', '5', '8', '3', '1', '2', '7', '6', '4')
         num = await r.sort('gods', start=2, num=4, by='user:*:username',
-                     get='user:*:favorite_drink', desc=True, alpha=True,
-                     store='sorted')
+                           get='user:*:favorite_drink', desc=True, alpha=True,
+                           store='sorted')
         assert num == 4
-        assert await r.lrange('sorted', 0, 10) == \
-            [b('vodka'), b('milk'), b('gin'), b('apple juice')]
+        expected = [b('vodka'), b('milk'), b('gin'), b('apple juice')]
+        assert await r.lrange('sorted', 0, 10) == expected
 
     # GEO COMMANDS
     @skip_if_server_version_lt('3.2.0')
     @pytest.mark.asyncio(forbid_global_loop=True)
     async def test_geoadd(self, r):
         await r.flushdb()
-        values = (2.1909389952632, 41.433791470673, 'place1') +\
-                 (2.1873744593677, 41.406342043777, 'place2')
+        values = ((2.1909389952632, 41.433791470673, 'place1')
+                  + (2.1873744593677, 41.406342043777, 'place2'))
 
         assert await r.geoadd('barcelona', *values) == 2
         assert await r.zcard('barcelona') == 2
@@ -1822,8 +1827,8 @@ class TestRedisCommands:
     @pytest.mark.asyncio(forbid_global_loop=True)
     async def test_geodist(self, r):
         await r.flushdb()
-        values = (2.1909389952632, 41.433791470673, 'place1') +\
-                 (2.1873744593677, 41.406342043777, 'place2')
+        values = ((2.1909389952632, 41.433791470673, 'place1')
+                  + (2.1873744593677, 41.406342043777, 'place2'))
 
         assert await r.geoadd('barcelona', *values) == 2
         assert await r.geodist('barcelona', 'place1', 'place2') == 3067.4157
@@ -1832,8 +1837,8 @@ class TestRedisCommands:
     @pytest.mark.asyncio(forbid_global_loop=True)
     async def test_geodist_units(self, r):
         await r.flushdb()
-        values = (2.1909389952632, 41.433791470673, 'place1') +\
-                 (2.1873744593677, 41.406342043777, 'place2')
+        values = ((2.1909389952632, 41.433791470673, 'place1')
+                  + (2.1873744593677, 41.406342043777, 'place2'))
 
         await r.geoadd('barcelona', *values)
         assert await r.geodist('barcelona', 'place1', 'place2', 'km') == 3.0674
@@ -1849,12 +1854,12 @@ class TestRedisCommands:
     @pytest.mark.asyncio(forbid_global_loop=True)
     async def test_geohash(self, r):
         await r.flushdb()
-        values = (2.1909389952632, 41.433791470673, 'place1') +\
-                 (2.1873744593677, 41.406342043777, 'place2')
+        values = ((2.1909389952632, 41.433791470673, 'place1')
+                  + (2.1873744593677, 41.406342043777, 'place2'))
 
         await r.geoadd('barcelona', *values)
-        assert await r.geohash('barcelona', 'place1', 'place2') ==\
-            [b'sp3e9yg3kd0', b'sp3e9cbc3t0']
+        expected = [b'sp3e9yg3kd0', b'sp3e9cbc3t0']
+        assert await r.geohash('barcelona', 'place1', 'place2') == expected
 
     @skip_if_server_version_lt('4.0.0')
     @pytest.mark.asyncio(forbid_global_loop=True)
@@ -1866,21 +1871,22 @@ class TestRedisCommands:
     @pytest.mark.asyncio(forbid_global_loop=True)
     async def test_geopos(self, r):
         await r.flushdb()
-        values = (2.1909389952632, 41.433791470673, 'place1') +\
-                 (2.1873744593677, 41.406342043777, 'place2')
+        values = ((2.1909389952632, 41.433791470673, 'place1')
+                  + (2.1873744593677, 41.406342043777, 'place2'))
 
         await r.geoadd('barcelona', *values)
         # redis uses 52 bits precision, hereby small errors may be introduced.
-        assert await r.geopos('barcelona', 'place1', 'place2') ==\
-            [(2.19093829393386841, 41.43379028184083523),
-             (2.18737632036209106, 41.40634178640635099)]
+        expected = [
+            (2.19093829393386841, 41.43379028184083523),
+            (2.18737632036209106, 41.40634178640635099)]
+        assert await r.geopos('barcelona', 'place1', 'place2') == expected
 
     @skip_if_server_version_lt('3.2.0')
     @pytest.mark.asyncio(forbid_global_loop=True)
     async def test_georadius(self, r):
         await r.flushdb()
-        values = (2.1909389952632, 41.433791470673, 'place1') +\
-                 (2.1873744593677, 41.406342043777, 'place2')
+        values = ((2.1909389952632, 41.433791470673, 'place1')
+                  + (2.1873744593677, 41.406342043777, 'place2'))
 
         await r.geoadd('barcelona', *values)
         assert await r.georadius('barcelona', 2.191, 41.433, 1000) == ['place1']
@@ -1889,8 +1895,8 @@ class TestRedisCommands:
     @pytest.mark.asyncio(forbid_global_loop=True)
     async def test_georadius_no_values(self, r):
         await r.flushdb()
-        values = (2.1909389952632, 41.433791470673, 'place1') +\
-                 (2.1873744593677, 41.406342043777, 'place2')
+        values = ((2.1909389952632, 41.433791470673, 'place1')
+                  + (2.1873744593677, 41.406342043777, 'place2'))
 
         await r.geoadd('barcelona', *values)
         assert await r.georadius('barcelona', 1, 2, 1000) == []
@@ -1899,110 +1905,109 @@ class TestRedisCommands:
     @pytest.mark.asyncio(forbid_global_loop=True)
     async def test_georadius_units(self, r):
         await r.flushdb()
-        values = (2.1909389952632, 41.433791470673, 'place1') +\
-                 (2.1873744593677, 41.406342043777, 'place2')
+        values = ((2.1909389952632, 41.433791470673, 'place1')
+                  + (2.1873744593677, 41.406342043777, 'place2'))
 
         await r.geoadd('barcelona', *values)
-        assert await r.georadius('barcelona', 2.191, 41.433, 1, unit='km') ==\
-            ['place1']
+        expected = ['place1']
+        assert await r.georadius('barcelona', 2.191, 41.433, 1, unit='km') == expected
 
     @skip_if_server_version_lt('3.2.0')
     @pytest.mark.asyncio(forbid_global_loop=True)
     async def test_georadius_with(self, r):
         await r.flushdb()
-        values = (2.1909389952632, 41.433791470673, 'place1') +\
-                 (2.1873744593677, 41.406342043777, 'place2')
+        values = ((2.1909389952632, 41.433791470673, 'place1')
+                  + (2.1873744593677, 41.406342043777, 'place2'))
 
         await r.geoadd('barcelona', *values)
 
         # test a bunch of combinations to test the parse response
         # function.
+        expected = [['place1', 0.0881, 3471609698139488,
+                     (2.19093829393386841, 41.43379028184083523)]]
         assert await r.georadius('barcelona', 2.191, 41.433, 1, unit='km',
-                           withdist=True, withcoord=True, withhash=True) ==\
-            [['place1', 0.0881, 3471609698139488,
-              (2.19093829393386841, 41.43379028184083523)]]
+                                 withdist=True, withcoord=True, withhash=True) == expected
 
+        expected = [['place1', 0.0881,
+                     (2.19093829393386841, 41.43379028184083523)]]
         assert await r.georadius('barcelona', 2.191, 41.433, 1, unit='km',
-                           withdist=True, withcoord=True) ==\
-            [['place1', 0.0881,
-              (2.19093829393386841, 41.43379028184083523)]]
+                                 withdist=True, withcoord=True) == expected
 
+        expected = [['place1', 3471609698139488,
+                     (2.19093829393386841, 41.43379028184083523)]]
         assert await r.georadius('barcelona', 2.191, 41.433, 1, unit='km',
-                           withhash=True, withcoord=True) ==\
-            [['place1', 3471609698139488,
-              (2.19093829393386841, 41.43379028184083523)]]
+                                 withhash=True, withcoord=True) == expected
 
         # test no values.
         assert await r.georadius('barcelona', 2, 1, 1, unit='km',
-                           withdist=True, withcoord=True, withhash=True) == []
+                                 withdist=True, withcoord=True, withhash=True) == []
 
     @skip_if_server_version_lt('3.2.0')
     @pytest.mark.asyncio(forbid_global_loop=True)
     async def test_georadius_count(self, r):
         await r.flushdb()
-        values = (2.1909389952632, 41.433791470673, 'place1') +\
-                 (2.1873744593677, 41.406342043777, 'place2')
+        values = ((2.1909389952632, 41.433791470673, 'place1')
+                  + (2.1873744593677, 41.406342043777, 'place2'))
 
         await r.geoadd('barcelona', *values)
-        assert await r.georadius('barcelona', 2.191, 41.433, 3000, count=1) ==\
-            ['place1']
+        assert await r.georadius('barcelona', 2.191, 41.433, 3000, count=1) == ['place1']
 
     @skip_if_server_version_lt('3.2.0')
     @pytest.mark.asyncio(forbid_global_loop=True)
     async def test_georadius_sort(self, r):
         await r.flushdb()
-        values = (2.1909389952632, 41.433791470673, 'place1') +\
-                 (2.1873744593677, 41.406342043777, 'place2')
+        values = ((2.1909389952632, 41.433791470673, 'place1')
+                  + (2.1873744593677, 41.406342043777, 'place2'))
 
         await r.geoadd('barcelona', *values)
-        assert await r.georadius('barcelona', 2.191, 41.433, 3000, sort='ASC') ==\
-            ['place1', 'place2']
-        assert await r.georadius('barcelona', 2.191, 41.433, 3000, sort='DESC') ==\
-            ['place2', 'place1']
+        assert await r.georadius('barcelona', 2.191, 41.433, 3000, sort='ASC') == ['place1', 'place2']
+        assert await r.georadius('barcelona', 2.191, 41.433, 3000, sort='DESC') == ['place2', 'place1']
 
     @skip_if_server_version_lt('3.2.0')
     @pytest.mark.asyncio(forbid_global_loop=True)
     async def test_georadius_store(self, r):
         await r.flushdb()
-        values = (2.1909389952632, 41.433791470673, 'place1') +\
-                 (2.1873744593677, 41.406342043777, 'place2')
+        values = ((2.1909389952632, 41.433791470673, 'place1')
+                  + (2.1873744593677, 41.406342043777, 'place2'))
 
         await r.geoadd('barcelona', *values)
         await r.georadius('barcelona', 2.191, 41.433, 1000, store='places_barcelona')
         assert await r.zrange('places_barcelona', 0, -1) == [b'place1']
 
-    @skip_if_server_version_lt('3.2.0')
+    @ skip_if_server_version_lt('3.2.0')
     @pytest.mark.asyncio(forbid_global_loop=True)
     async def test_georadius_store_dist(self, r):
         await r.flushdb()
-        values = (2.1909389952632, 41.433791470673, 'place1') +\
-                 (2.1873744593677, 41.406342043777, 'place2')
+        values = ((2.1909389952632, 41.433791470673, 'place1')
+                  + (2.1873744593677, 41.406342043777, 'place2'))
 
         await r.geoadd('barcelona', *values)
         await r.georadius('barcelona', 2.191, 41.433, 1000,
-                    store_dist='places_barcelona')
+                          store_dist='places_barcelona')
         # instead of save the geo score, the distance is saved.
         assert await r.zscore('places_barcelona', 'place1') == 88.05060698409301
 
-    @skip_if_server_version_lt('3.2.0')
+    @ skip_if_server_version_lt('3.2.0')
     @pytest.mark.asyncio(forbid_global_loop=True)
     async def test_georadiusmember(self, r):
         await r.flushdb()
-        values = (2.1909389952632, 41.433791470673, 'place1') +\
-                 (2.1873744593677, 41.406342043777, 'place2')
+        values = ((2.1909389952632, 41.433791470673, 'place1')
+                  + (2.1873744593677, 41.406342043777, 'place2'))
 
         await r.geoadd('barcelona', *values)
-        assert await r.georadiusbymember('barcelona', 'place1', 4000) ==\
-            ['place2', 'place1']
+        expected = ['place2', 'place1']
+        assert await r.georadiusbymember('barcelona', 'place1', 4000) == expected
         assert await r.georadiusbymember('barcelona', 'place1', 10) == ['place1']
 
+        expected = [
+            ['place2', 3067.4157, 3471609625421029,
+             (2.187376320362091, 41.40634178640635)],
+            ['place1', 0.0, 3471609698139488,
+             (2.1909382939338684, 41.433790281840835)],
+        ]
         assert await r.georadiusbymember('barcelona', 'place1', 4000,
-                                   withdist=True, withcoord=True,
-                                   withhash=True) ==\
-            [['place2', 3067.4157, 3471609625421029,
-                (2.187376320362091, 41.40634178640635)],
-             ['place1', 0.0, 3471609698139488,
-                 (2.1909382939338684, 41.433790281840835)]]
+                                         withdist=True, withcoord=True,
+                                         withhash=True) == expected
 
 
 class TestBinarySave:
@@ -2019,8 +2024,9 @@ class TestBinarySave:
         assert await r.set(' \r\n\t\x07\x13 ', '789')
         assert await r.get(' \r\n\t\x07\x13 ') == b('789')
 
-        assert sorted(await r.keys('*')) == \
-            [b(' \r\n\t\x07\x13 '), b(' foo\r\nbar\r\n '), b(' foo bar ')]
+        expected = [b(' \r\n\t\x07\x13 '), b(
+            ' foo\r\nbar\r\n '), b(' foo bar ')]
+        assert sorted(await r.keys('*')) == expected
 
         assert await r.delete(' foo bar ')
         assert await r.delete(' foo\r\nbar\r\n ')
@@ -2039,7 +2045,7 @@ class TestBinarySave:
             await r.rpush(key, *value)
 
         # check that KEYS returns all the keys as they are
-        assert sorted(await r.keys('*')) == sorted(list(iterkeys(mapping)))
+        assert sorted(await r.keys('*')) == sorted(iterkeys(mapping))
 
         # check that it is possible to get list content by key name
         for key, value in iteritems(mapping):
@@ -2052,30 +2058,30 @@ class TestBinarySave:
         was the cause of a number of bugs when parsing.
         """
         await r.flushdb()
-        info = b"allocation_stats:6=1,7=1,8=7141,9=180,10=92,11=116,12=5330," \
-               b"13=123,14=3091,15=11048,16=225842,17=1784,18=814,19=12020," \
-               b"20=2530,21=645,22=15113,23=8695,24=142860,25=318,26=3303," \
-               b"27=20561,28=54042,29=37390,30=1884,31=18071,32=31367,33=160," \
-               b"34=169,35=201,36=10155,37=1045,38=15078,39=22985,40=12523," \
-               b"41=15588,42=265,43=1287,44=142,45=382,46=945,47=426,48=171," \
-               b"49=56,50=516,51=43,52=41,53=46,54=54,55=75,56=647,57=332," \
-               b"58=32,59=39,60=48,61=35,62=62,63=32,64=221,65=26,66=30," \
-               b"67=36,68=41,69=44,70=26,71=144,72=169,73=24,74=37,75=25," \
-               b"76=42,77=21,78=126,79=374,80=27,81=40,82=43,83=47,84=46," \
-               b"85=114,86=34,87=37,88=7240,89=34,90=38,91=18,92=99,93=20," \
-               b"94=18,95=17,96=15,97=22,98=18,99=69,100=17,101=22,102=15," \
-               b"103=29,104=39,105=30,106=70,107=22,108=21,109=26,110=52," \
-               b"111=45,112=33,113=67,114=41,115=44,116=48,117=53,118=54," \
-               b"119=51,120=75,121=44,122=57,123=44,124=66,125=56,126=52," \
-               b"127=81,128=108,129=70,130=50,131=51,132=53,133=45,134=62," \
-               b"135=12,136=13,137=7,138=15,139=21,140=11,141=20,142=6,143=7," \
-               b"144=11,145=6,146=16,147=19,148=1112,149=1,151=83,154=1," \
-               b"155=1,156=1,157=1,160=1,161=1,162=2,166=1,169=1,170=1,171=2," \
-               b"172=1,174=1,176=2,177=9,178=34,179=73,180=30,181=1,185=3," \
-               b"187=1,188=1,189=1,192=1,196=1,198=1,200=1,201=1,204=1,205=1," \
-               b"207=1,208=1,209=1,214=2,215=31,216=78,217=28,218=5,219=2," \
-               b"220=1,222=1,225=1,227=1,234=1,242=1,250=1,252=1,253=1," \
-               b">=256=203"
+        info = (b'allocation_stats:6=1,7=1,8=7141,9=180,10=92,11=116,12=5330,'
+                b'13=123,14=3091,15=11048,16=225842,17=1784,18=814,19=12020,'
+                b'20=2530,21=645,22=15113,23=8695,24=142860,25=318,26=3303,'
+                b'27=20561,28=54042,29=37390,30=1884,31=18071,32=31367,33=160,'
+                b'34=169,35=201,36=10155,37=1045,38=15078,39=22985,40=12523,'
+                b'41=15588,42=265,43=1287,44=142,45=382,46=945,47=426,48=171,'
+                b'49=56,50=516,51=43,52=41,53=46,54=54,55=75,56=647,57=332,'
+                b'58=32,59=39,60=48,61=35,62=62,63=32,64=221,65=26,66=30,'
+                b'67=36,68=41,69=44,70=26,71=144,72=169,73=24,74=37,75=25,'
+                b'76=42,77=21,78=126,79=374,80=27,81=40,82=43,83=47,84=46,'
+                b'85=114,86=34,87=37,88=7240,89=34,90=38,91=18,92=99,93=20,'
+                b'94=18,95=17,96=15,97=22,98=18,99=69,100=17,101=22,102=15,'
+                b'103=29,104=39,105=30,106=70,107=22,108=21,109=26,110=52,'
+                b'111=45,112=33,113=67,114=41,115=44,116=48,117=53,118=54,'
+                b'119=51,120=75,121=44,122=57,123=44,124=66,125=56,126=52,'
+                b'127=81,128=108,129=70,130=50,131=51,132=53,133=45,134=62,'
+                b'135=12,136=13,137=7,138=15,139=21,140=11,141=20,142=6,143=7,'
+                b'144=11,145=6,146=16,147=19,148=1112,149=1,151=83,154=1,'
+                b'155=1,156=1,157=1,160=1,161=1,162=2,166=1,169=1,170=1,171=2,'
+                b'172=1,174=1,176=2,177=9,178=34,179=73,180=30,181=1,185=3,'
+                b'187=1,188=1,189=1,192=1,196=1,198=1,200=1,201=1,204=1,205=1,'
+                b'207=1,208=1,209=1,214=2,215=31,216=78,217=28,218=5,219=2,'
+                b'220=1,222=1,225=1,227=1,234=1,242=1,250=1,252=1,253=1,'
+                b'>=256=203')
         parsed = parse_info(info)
         assert 'allocation_stats' in parsed
         assert '6' in parsed['allocation_stats']
@@ -2083,7 +2089,7 @@ class TestBinarySave:
 
     @pytest.mark.asyncio(forbid_global_loop=True)
     async def test_large_responses(self, r):
-        "The PythonParser has some special cases for return values > 1MB"
+        'The PythonParser has some special cases for return values > 1MB'
         # load up 5MB of data into a key
         await r.flushdb()
         data = ''.join([ascii_letters] * (5000000 // len(ascii_letters)))

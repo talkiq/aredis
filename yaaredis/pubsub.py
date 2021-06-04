@@ -2,11 +2,16 @@ import asyncio
 import threading
 
 from .compat import CancelledError
-from .exceptions import PubSubError, ConnectionError, TimeoutError
-from .utils import (list_or_args,
-                          iteritems,
-                          iterkeys,
-                          nativestr)
+from .exceptions import ConnectionError  # pylint: disable=redefined-builtin
+from .exceptions import PubSubError
+from .exceptions import TimeoutError  # pylint: disable=redefined-builtin
+from .utils import iteritems
+from .utils import iterkeys
+from .utils import list_or_args
+from .utils import nativestr
+
+
+SENTINEL = object()
 
 
 class PubSub:
@@ -24,6 +29,11 @@ class PubSub:
         self.connection_pool = connection_pool
         self.ignore_subscribe_messages = ignore_subscribe_messages
         self.connection = None
+
+        # see `self._ensure_encoding()`
+        self.encoding = SENTINEL
+        self.decode_responses = SENTINEL
+
         self.reset()
 
     async def _ensure_encoding(self):
@@ -31,7 +41,7 @@ class PubSub:
         # to lookup channel and pattern names for callback handlers.
         # we want to do this only once after initializing this class but
         # before using our connection
-        if hasattr(self, "encoding"):
+        if self.encoding is not SENTINEL:
             return
 
         conn = await self.connection_pool.get_connection('pubsub')
@@ -62,8 +72,8 @@ class PubSub:
     def close(self):
         self.reset()
 
-    async def on_connect(self, connection):
-        """Re-subscribe to any channels and patterns previously subscribed to"""
+    async def on_connect(self, _connection):
+        """Re-subscribe to any previously subscribed channels and patterns"""
         # NOTE: for python3, we can't pass bytestrings as keyword arguments
         # so we need to decode channel/pattern names back to str strings
         # before passing them to [p]subscribe.
@@ -98,7 +108,7 @@ class PubSub:
         """Indicates if there are subscriptions to any channels or patterns"""
         return bool(self.channels or self.patterns)
 
-    async def execute_command(self, *args, **kwargs):
+    async def execute_command(self, *args, **_kwargs):
         """Executes a publish/subscribe command"""
         await self._ensure_encoding()
 
@@ -167,7 +177,8 @@ class PubSub:
         new_patterns.update(dict.fromkeys(map(self.encode, args)))
         for pattern, handler in iteritems(kwargs):
             new_patterns[self.encode(pattern)] = handler
-        ret_val = await self.execute_command('PSUBSCRIBE', *iterkeys(new_patterns))
+        ret_val = await self.execute_command('PSUBSCRIBE',
+                                             *iterkeys(new_patterns))
         # update the patterns dict AFTER we send the command. we don't want to
         # subscribe twice to these patterns, once for the command and again
         # for the reconnection.
@@ -201,7 +212,8 @@ class PubSub:
         new_channels.update(dict.fromkeys(map(self.encode, args)))
         for channel, handler in iteritems(kwargs):
             new_channels[self.encode(channel)] = handler
-        ret_val = await self.execute_command('SUBSCRIBE', *iterkeys(new_channels))
+        ret_val = await self.execute_command('SUBSCRIBE',
+                                             *iterkeys(new_channels))
         # update the channels dict AFTER we send the command. we don't want to
         # subscribe twice to these channels, once for the command and again
         # for the reconnection.
@@ -251,14 +263,14 @@ class PubSub:
                 'type': message_type,
                 'pattern': response[1],
                 'channel': response[2],
-                'data': response[3]
+                'data': response[3],
             }
         else:
             message = {
                 'type': message_type,
                 'pattern': None,
                 'channel': response[1],
-                'data': response[2]
+                'data': response[2],
             }
 
         # if this is an unsubscribe message, remove it from memory
@@ -308,7 +320,7 @@ class PubSub:
 
 class PubSubWorkerThread(threading.Thread):
     def __init__(self, pubsub, daemon=False, poll_timeout=1.0):
-        super(PubSubWorkerThread, self).__init__()
+        super().__init__()
         self.daemon = daemon
         self.pubsub = pubsub
         self.poll_timeout = poll_timeout
@@ -328,7 +340,7 @@ class PubSubWorkerThread(threading.Thread):
 
     def run(self):
         if self._running:
-            return
+            return None
         self._running = True
         future = asyncio.run_coroutine_threadsafe(self._run(), self.loop)
         return future.result()
@@ -338,11 +350,14 @@ class PubSubWorkerThread(threading.Thread):
         # the unsubscribe responses that are generated will short circuit
         # the loop in run(), calling pubsub.close() to clean up the connection
         if self.loop:
-            unsubscribed = asyncio.run_coroutine_threadsafe(self.pubsub.unsubscribe(), self.loop)
-            punsubscribed = asyncio.run_coroutine_threadsafe(self.pubsub.punsubscribe(), self.loop)
+            unsubscribed = asyncio.run_coroutine_threadsafe(
+                self.pubsub.unsubscribe(), self.loop)
+            punsubscribed = asyncio.run_coroutine_threadsafe(
+                self.pubsub.punsubscribe(), self.loop)
+            # pylint: disable=deprecated-argument
             asyncio.wait(
                 [unsubscribed, punsubscribed],
-                loop=self.loop
+                loop=self.loop,
             )
 
 
@@ -350,13 +365,14 @@ class ClusterPubSub(PubSub):
     """Wrappers for the PubSub class"""
 
     def __init__(self, *args, **kwargs):
-        super(ClusterPubSub, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
-    async def execute_command(self, *args, **kwargs):
+    async def execute_command(self, *args, **_kwargs):
         """
         Executes a publish/subscribe command.
 
-        NOTE: The code was initially taken from redis-py and tweaked to make it work within a cluster.
+        NOTE: The code was initially taken from redis-py and tweaked to make it
+        work within a cluster.
         """
         # NOTE: don't parse the response in this function -- it could pull a
         # legitimate message off the stack if the connection is already

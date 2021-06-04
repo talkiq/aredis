@@ -1,9 +1,9 @@
-from ..pubsub import (PubSub,
-                           ClusterPubSub)
-from ..utils import (dict_merge,
-                          merge_result,
-                          list_keys_to_dict,
-                          NodeFlag)
+from ..pubsub import ClusterPubSub
+from ..pubsub import PubSub
+from ..utils import dict_merge
+from ..utils import list_keys_to_dict
+from ..utils import merge_result
+from ..utils import NodeFlag
 
 
 def parse_pubsub_numsub(response, **options):
@@ -72,7 +72,7 @@ def parse_cluster_pubsub_numpat(res, **options):
         return res
 
     numpat = 0
-    for node, node_numpat in res.items():
+    for node_numpat in res.values():
         numpat += node_numpat
     return numpat
 
@@ -86,7 +86,7 @@ def parse_cluster_pubsub_numsub(res, **options):
     if not aggregate:
         return res
 
-    numsub_d = dict()
+    numsub_d = {}
     for _, numsub_tups in res.items():
         for channel, numsubbed in numsub_tups:
             try:
@@ -100,25 +100,24 @@ def parse_cluster_pubsub_numsub(res, **options):
     return ret_numsub
 
 
-
 class CLusterPubSubCommandMixin(PubSubCommandMixin):
-    
+
     NODES_FLAGS = dict_merge(
         list_keys_to_dict(
             ['PUBSUB CHANNELS', 'PUBSUB NUMSUB', 'PUBSUB NUMPAT'],
-            NodeFlag.ALL_NODES
-        )
+            NodeFlag.ALL_NODES,
+        ),
     )
 
     RESULT_CALLBACKS = dict_merge(
         list_keys_to_dict([
-            "PUBSUB CHANNELS",
+            'PUBSUB CHANNELS',
         ], parse_cluster_pubsub_channels),
         list_keys_to_dict([
-            "PUBSUB NUMSUB",
+            'PUBSUB NUMSUB',
         ], parse_cluster_pubsub_numsub),
         list_keys_to_dict([
-            "PUBSUB NUMPAT",
+            'PUBSUB NUMPAT',
         ], parse_cluster_pubsub_numpat),
     )
 

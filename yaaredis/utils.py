@@ -1,12 +1,13 @@
 import sys
 from functools import wraps
 
-from .exceptions import (ClusterDownError, RedisClusterException)
+from .exceptions import ClusterDownError
+from .exceptions import RedisClusterException
 
 
 _C_EXTENSION_SPEEDUP = False
 try:
-    from .speedups import crc16, hash_slot
+    from .speedups import crc16, hash_slot  # pylint: disable=unused-import
 
     _C_EXTENSION_SPEEDUP = True
 except Exception:
@@ -42,12 +43,11 @@ def ban_python_version_lt(min_version):
         @wraps(func)
         def _inner(*args, **kwargs):
             if sys.version_info[:2] < min_version:
-                raise EnvironmentError(
+                raise OSError(
                     '{} not supported in Python version less than {}'
-                        .format(func.__name__, min_version)
+                    .format(func.__name__, min_version),
                 )
-            else:
-                return func(*args, **kwargs)
+            return func(*args, **kwargs)
 
         return _inner
 
@@ -127,7 +127,7 @@ def merge_result(res):
     if not isinstance(res, dict):
         raise ValueError('Value should be of dict type')
 
-    result = set([])
+    result = set()
 
     for _, v in res.items():
         for value in v:
@@ -146,7 +146,7 @@ def first_key(res):
         raise ValueError('Value should be of dict type')
 
     if len(res.keys()) != 1:
-        raise RedisClusterException("More then 1 result from command")
+        raise RedisClusterException('More then 1 result from command')
 
     return list(res.values())[0]
 
@@ -155,7 +155,8 @@ def blocked_command(self, command):
     """
     Raises a `RedisClusterException` mentioning the command is blocked.
     """
-    raise RedisClusterException("Command: {0} is blocked in redis cluster mode".format(command))
+    raise RedisClusterException(
+        'Command: {} is blocked in redis cluster mode'.format(command))
 
 
 def clusterdown_wrapper(func):
@@ -181,7 +182,8 @@ def clusterdown_wrapper(func):
                 pass
 
         # If it fails 3 times then raise exception back to caller
-        raise ClusterDownError("CLUSTERDOWN error. Unable to rebuild the cluster")
+        raise ClusterDownError(
+            'CLUSTERDOWN error. Unable to rebuild the cluster')
 
     return inner
 
@@ -219,28 +221,25 @@ if not _C_EXTENSION_SPEEDUP:
         0xfd2e, 0xed0f, 0xdd6c, 0xcd4d, 0xbdaa, 0xad8b, 0x9de8, 0x8dc9,
         0x7c26, 0x6c07, 0x5c64, 0x4c45, 0x3ca2, 0x2c83, 0x1ce0, 0x0cc1,
         0xef1f, 0xff3e, 0xcf5d, 0xdf7c, 0xaf9b, 0xbfba, 0x8fd9, 0x9ff8,
-        0x6e17, 0x7e36, 0x4e55, 0x5e74, 0x2e93, 0x3eb2, 0x0ed1, 0x1ef0
+        0x6e17, 0x7e36, 0x4e55, 0x5e74, 0x2e93, 0x3eb2, 0x0ed1, 0x1ef0,
     ]
-
 
     def _crc16(data):
         crc = 0
         for byte in data:
-            crc = ((crc << 8) & 0xff00) ^ x_mode_m_crc16_lookup[((crc >> 8) & 0xff) ^ byte]
+            crc = ((crc << 8) & 0xff00) ^ x_mode_m_crc16_lookup[(
+                (crc >> 8) & 0xff) ^ byte]
         return crc & 0xffff
-
 
     crc16 = _crc16
 
-
     def _hash_slot(key):
-        start = key.find(b"{")
+        start = key.find(b'{')
         if start > -1:
-            end = key.find(b"}", start + 1)
+            end = key.find(b'}', start + 1)
             if end > -1 and end != start + 1:
                 key = key[start + 1:end]
         return crc16(key) % 16384
-
 
     hash_slot = _hash_slot
 

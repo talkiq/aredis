@@ -1,9 +1,11 @@
-from ..utils import (b, dict_merge,
-                          bool_ok, nativestr,
-                          string_keys_to_dict)
-from ..exceptions import (DataError,
-                               RedisClusterException,
-                               RedisError)
+from ..exceptions import DataError
+from ..exceptions import RedisClusterException
+from ..exceptions import RedisError
+from ..utils import b
+from ..utils import bool_ok
+from ..utils import dict_merge
+from ..utils import nativestr
+from ..utils import string_keys_to_dict
 
 
 class ListsCommandMixin:
@@ -11,12 +13,12 @@ class ListsCommandMixin:
     RESPONSE_CALLBACKS = dict_merge(
         string_keys_to_dict(
             'BLPOP BRPOP',
-            lambda r: r and tuple(r) or None
+            lambda r: r and tuple(r) or None,
         ),
         string_keys_to_dict(
             # these return OK, or int if redis-server is >=1.3.4
             'LPUSH RPUSH',
-            lambda r: isinstance(r, int) and r or nativestr(r) == 'OK'
+            lambda r: isinstance(r, int) and r or nativestr(r) == 'OK',
         ),
         string_keys_to_dict('LSET LTRIM', bool_ok),
         string_keys_to_dict('LINSERT LLEN LPUSHX RPUSHX', int),
@@ -215,7 +217,8 @@ class ClusterListsCommandMixin(ListsCommandMixin):
 
         return None
 
-    async def sort(self, name, start=None, num=None, by=None, get=None, desc=False, alpha=False, store=None, groups=None):
+    async def sort(self, name, start=None, num=None, by=None, get=None,
+                   desc=False, alpha=False, store=None, groups=None):
         """Sorts and returns a list, set or sorted set at ``name``.
 
         :start: and :num:
@@ -240,23 +243,29 @@ class ClusterListsCommandMixin(ListsCommandMixin):
             is for storing the result of the sort into the key `store`
 
         ClusterImpl:
-            A full implementation of the server side sort mechanics because many of the
-            options work on multiple keys that can exist on multiple servers.
+            A full implementation of the server side sort mechanics because
+            many of the options work on multiple keys that can exist on
+            multiple servers.
         """
-        if (start is None and num is not None) or \
-                (start is not None and num is None):
-            raise RedisError("RedisError: ``start`` and ``num`` must both be specified")
+        # pylint: disable=too-many-branches
+        if ((start is None and num is not None)
+                or (start is not None and num is None)):
+            raise RedisError(
+                'RedisError: ``start`` and ``num`` must both be specified')
         try:
             data_type = b(await self.type(name))
 
-            if data_type == b("none"):
+            if data_type == b('none'):
                 return []
-            elif data_type == b("set"):
+
+            if data_type == b('set'):
                 data = list(await self.smembers(name))[:]
-            elif data_type == b("list"):
+            elif data_type == b('list'):
                 data = await self.lrange(name, 0, -1)
             else:
-                raise RedisClusterException("Unable to sort data type : {0}".format(data_type))
+                raise RedisClusterException(
+                    'Unable to sort data type : {}'.format(data_type))
+
             if by is not None:
                 # _sort_using_by_arg mutates data so we don't
                 # need need a return value.
@@ -274,14 +283,15 @@ class ClusterListsCommandMixin(ListsCommandMixin):
                 data = await self._retrive_data_from_sort(data, get)
 
             if store is not None:
-                if data_type == b("set"):
+                if data_type == b('set'):
                     await self.delete(store)
                     await self.rpush(store, *data)
-                elif data_type == b("list"):
+                elif data_type == b('list'):
                     await self.delete(store)
                     await self.rpush(store, *data)
                 else:
-                    raise RedisClusterException("Unable to store sorted data for data type : {0}".format(data_type))
+                    raise RedisClusterException(
+                        'Unable to store sorted data for data type : {}'.format(data_type))
 
                 return len(data)
 
@@ -291,9 +301,8 @@ class ClusterListsCommandMixin(ListsCommandMixin):
                                     'must be specified and contain at least '
                                     'two keys')
                 n = len(get)
-                return list(zip(*[data[i::n] for i in range(n)]))
-            else:
-                return data
+                return list(zip(*(data[i::n] for i in range(n))))
+            return data
         except KeyError:
             return []
 
@@ -316,8 +325,8 @@ class ClusterListsCommandMixin(ListsCommandMixin):
         """
         Used by sort()
         """
-        if getattr(k, "decode", None):
-            k = k.decode("utf-8")
+        if getattr(k, 'decode', None):
+            k = k.decode('utf-8')
 
         if '*' in g:
             g = g.replace('*', k)
@@ -332,7 +341,8 @@ class ClusterListsCommandMixin(ListsCommandMixin):
             single_item = None
         return b(single_item)
 
-    def _strtod_key_func(self, arg):
+    @staticmethod
+    def _strtod_key_func(arg):
         """
         Used by sort()
         """
@@ -342,12 +352,12 @@ class ClusterListsCommandMixin(ListsCommandMixin):
         """
         Used by sort()
         """
-        if getattr(by, "decode", None):
-            by = by.decode("utf-8")
+        if getattr(by, 'decode', None):
+            by = by.decode('utf-8')
 
         async def _by_key(arg):
-            if getattr(arg, "decode", None):
-                arg = arg.decode("utf-8")
+            if getattr(arg, 'decode', None):
+                arg = arg.decode('utf-8')
 
             key = by.replace('*', arg)
             if '->' in by:
@@ -355,10 +365,8 @@ class ClusterListsCommandMixin(ListsCommandMixin):
                 v = await self.hget(key, hash_key)
                 if alpha:
                     return v
-                else:
-                    return float(v)
-            else:
-                return await self.get(key)
+                return float(v)
+            return await self.get(key)
         sorted_data = []
         for d in data:
             sorted_data.append((d, await _by_key(d)))

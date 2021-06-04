@@ -1,12 +1,15 @@
-from collections import defaultdict
+# pylint: disable=redefined-builtin
 import datetime
+from collections import defaultdict
+
 from ..exceptions import RedisError
-from ..utils import (NodeFlag, nativestr,
-                          iteritems,
-                          list_or_args,
-                          dict_merge,
-                          bool_ok,
-                          string_keys_to_dict)
+from ..utils import bool_ok
+from ..utils import dict_merge
+from ..utils import iteritems
+from ..utils import list_or_args
+from ..utils import nativestr
+from ..utils import NodeFlag
+from ..utils import string_keys_to_dict
 
 
 class BitField:
@@ -66,20 +69,21 @@ class BitField:
 
 
 class StringsCommandMixin:
+    # pylint: disable=too-many-public-methods
     RESPONSE_CALLBACKS = dict_merge(
         string_keys_to_dict(
             'MSETNX PSETEX SETEX SETNX',
-            bool
+            bool,
         ),
         string_keys_to_dict(
             'BITCOUNT BITPOS DECRBY GETBIT INCRBY '
-            'STRLEN SETBIT', int
+            'STRLEN SETBIT', int,
         ),
         {
             'INCRBYFLOAT': float,
             'MSET': bool_ok,
             'SET': lambda r: r and nativestr(r) == 'OK',
-        }
+        },
     )
 
     async def append(self, key, value):
@@ -99,9 +103,9 @@ class StringsCommandMixin:
         if start is not None and end is not None:
             params.append(start)
             params.append(end)
-        elif (start is not None and end is None) or \
-                (end is not None and start is None):
-            raise RedisError("Both start and end must be specified")
+        elif ((start is not None and end is None)
+                or (end is not None and start is None)):
+            raise RedisError('Both start and end must be specified')
         return await self.execute_command('BITCOUNT', *params)
 
     async def bitop(self, operation, dest, *keys):
@@ -122,13 +126,14 @@ class StringsCommandMixin:
             raise RedisError('bit must be 0 or 1')
         params = [key, bit]
 
-        start is not None and params.append(start)
+        if start is not None:
+            params.append(start)
 
         if start is not None and end is not None:
             params.append(end)
         elif start is None and end is not None:
-            raise RedisError("start argument is not set, "
-                             "when end is specified")
+            raise RedisError('start argument is not set, '
+                             'when end is specified')
         return await self.execute_command('BITPOS', *params)
 
     def bitfield(self, key):
@@ -148,7 +153,7 @@ class StringsCommandMixin:
         return await self.execute_command('GET', name)
 
     async def getbit(self, name, offset):
-        "Returns a boolean indicating the value of ``offset`` in ``name``"
+        'Returns a boolean indicating the value of ``offset`` in ``name``'
         return await self.execute_command('GETBIT', name, offset)
 
     async def getrange(self, key, start, end):
@@ -280,7 +285,7 @@ class StringsCommandMixin:
         Flag the ``offset`` in ``name`` as ``value``. Returns a boolean
         indicating the previous value of ``offset``.
         """
-        value = value and 1 or 0
+        value = 1 if value else 0
         return await self.execute_command('SETBIT', name, offset, value)
 
     async def setex(self, name, time, value):
@@ -327,7 +332,7 @@ class StringsCommandMixin:
 class ClusterStringsCommandMixin(StringsCommandMixin):
 
     NODES_FLAGS = {
-        'BITOP': NodeFlag.BLOCKED
+        'BITOP': NodeFlag.BLOCKED,
     }
 
     @staticmethod
@@ -428,7 +433,8 @@ class ClusterStringsCommandMixin(StringsCommandMixin):
         """
         if args:
             if len(args) != 1 or not isinstance(args[0], dict):
-                raise RedisError('MSETNX requires **kwargs or a single dict arg')
+                raise RedisError(
+                    'MSETNX requires **kwargs or a single dict arg')
             kwargs.update(args[0])
 
         # Itterate over all items and fail fast if one value is True.

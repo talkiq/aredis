@@ -1,14 +1,18 @@
 import asyncio
-from tornado.web import RequestHandler, Application
+
 from tornado.httpserver import HTTPServer
 from tornado.platform.asyncio import AsyncIOMainLoop
+from tornado.web import Application
+from tornado.web import RequestHandler
+
 from yaaredis import StrictRedis
 
 
 class GetRedisKeyHandler(RequestHandler):
 
     def __init__(self, application, request, **kwargs):
-        super(GetRedisKeyHandler, self).__init__(application, request, **kwargs)
+        super().__init__(
+            application, request, **kwargs)
         self.redis_client = StrictRedis()
 
     async def get(self):
@@ -16,7 +20,6 @@ class GetRedisKeyHandler(RequestHandler):
         res = await self.redis_client.get(key)
         print('key: {} val: {} in redis'.format(key, res))
         self.write(res)
-
 
 
 if __name__ == '__main__':

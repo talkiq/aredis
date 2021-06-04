@@ -1,16 +1,18 @@
 import datetime
 import time as mod_time
-from ..exceptions import (ResponseError,
-                               RedisError,
-                               DataError)
-from ..utils import (merge_result,
-                          NodeFlag,
-                          first_key,
-                          b, dict_merge,
-                          int_or_none,
-                          bool_ok,
-                          string_keys_to_dict,
-                          list_keys_to_dict)
+
+from ..exceptions import DataError
+from ..exceptions import RedisError
+from ..exceptions import ResponseError
+from ..utils import b
+from ..utils import bool_ok
+from ..utils import dict_merge
+from ..utils import first_key
+from ..utils import int_or_none
+from ..utils import list_keys_to_dict
+from ..utils import merge_result
+from ..utils import NodeFlag
+from ..utils import string_keys_to_dict
 
 
 def sort_return_tuples(response, **options):
@@ -21,7 +23,7 @@ def sort_return_tuples(response, **options):
     if not response or not options['groups']:
         return response
     n = options['groups']
-    return list(zip(*[response[i::n] for i in range(n)]))
+    return list(zip(*(response[i::n] for i in range(n))))
 
 
 def parse_object(response, infotype):
@@ -31,17 +33,17 @@ def parse_object(response, infotype):
     return response
 
 
-def parse_scan(response, **options):
+def parse_scan(response, **_options):
     cursor, r = response
     return int(cursor), r
 
 
 class KeysCommandMixin:
-
+    # pylint: disable=too-many-public-methods
     RESPONSE_CALLBACKS = dict_merge(
         string_keys_to_dict(
             'EXISTS EXPIRE EXPIREAT '
-            'MOVE PERSIST RENAMENX', bool
+            'MOVE PERSIST RENAMENX', bool,
         ),
         {
             'DEL': int,
@@ -50,7 +52,7 @@ class KeysCommandMixin:
             'RANDOMKEY': lambda r: r and r or None,
             'SCAN': parse_scan,
             'RENAME': bool_ok,
-        }
+        },
     )
 
     async def delete(self, *names):
@@ -155,7 +157,7 @@ class KeysCommandMixin:
         return await self.execute_command('RESTORE', *params)
 
     async def sort(self, name, start=None, num=None, by=None, get=None,
-             desc=False, alpha=False, store=None, groups=False):
+                   desc=False, alpha=False, store=None, groups=False):
         """
         Sorts and returns a list, set or sorted set at ``name``.
 
@@ -180,9 +182,9 @@ class KeysCommandMixin:
             values fetched from the arguments to ``get``.
 
         """
-        if (start is not None and num is None) or \
-                (num is not None and start is None):
-            raise RedisError("``start`` and ``num`` must both be specified")
+        if ((start is not None and num is None)
+                or (num is not None and start is None)):
+            raise RedisError('``start`` and ``num`` must both be specified')
 
         pieces = [name]
         if by is not None:
@@ -249,7 +251,8 @@ class KeysCommandMixin:
         """
         return await self.execute_command('WAIT', num_replicas, timeout)
 
-    async def scan(self, cursor=0, match=None, count=None, type=None):
+    async def scan(self, cursor=0, match=None, count=None,
+                   type=None):  # pylint: disable=redefined-builtin
         """
         Incrementally return lists of key names. Also return a cursor
         indicating the scan position.
@@ -274,20 +277,20 @@ class ClusterKeysCommandMixin(KeysCommandMixin):
 
     NODES_FLAGS = dict_merge(
         {
-        'MOVE': NodeFlag.BLOCKED,
-        'RANDOMKEY': NodeFlag.RANDOM,
-        'SCAN': NodeFlag.ALL_MASTERS,
+            'MOVE': NodeFlag.BLOCKED,
+            'RANDOMKEY': NodeFlag.RANDOM,
+            'SCAN': NodeFlag.ALL_MASTERS,
         },
         list_keys_to_dict(
             ['KEYS'],
-            NodeFlag.ALL_NODES
-        )
+            NodeFlag.ALL_NODES,
+        ),
     )
 
     RESULT_CALLBACKS = {
         'KEYS': merge_result,
         'RANDOMKEY': first_key,
-        'SCAN': lambda res: res
+        'SCAN': lambda res: res,
     }
 
     async def rename(self, src, dst):
@@ -299,12 +302,12 @@ class ClusterKeysCommandMixin(KeysCommandMixin):
             then set in separate calls because they maybe will change cluster node
         """
         if src == dst:
-            raise ResponseError("source and destination objects are the same")
+            raise ResponseError('source and destination objects are the same')
 
         data = await self.dump(src)
 
         if data is None:
-            raise ResponseError("no such key")
+            raise ResponseError('no such key')
 
         ttl = await self.pttl(src)
 

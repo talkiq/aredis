@@ -1,13 +1,14 @@
 import asyncio
+import contextvars
 import logging
 import time as mod_time
 import uuid
 
-import contextvars
-
 from .connection import ClusterConnection
-from .exceptions import LockError, WatchError
-from .utils import b, dummy
+from .exceptions import LockError
+from .exceptions import WatchError
+from .utils import b
+from .utils import dummy
 
 
 logger = logging.getLogger(__name__)
@@ -21,6 +22,7 @@ class Lock:
     It's left to the user to resolve deadlock issues and make sure
     multiple clients play nicely together.
     """
+    # pylint: disable=too-many-instance-attributes
 
     def __init__(self, redis, name, timeout=None, sleep=0.1,
                  blocking=True, blocking_timeout=None, thread_local=True):
@@ -81,7 +83,8 @@ class Lock:
         self.blocking = blocking
         self.blocking_timeout = blocking_timeout
         self.thread_local = bool(thread_local)
-        self.local = contextvars.ContextVar('token', default=None) if self.thread_local else dummy()
+        self.local = contextvars.ContextVar(
+            'token', default=None) if self.thread_local else dummy()
         if self.timeout and self.sleep > self.timeout:
             raise LockError("'sleep' must be less than 'timeout'")
 
@@ -122,6 +125,7 @@ class Lock:
                 return False
             if stop_trying_at is not None and mod_time.time() > stop_trying_at:
                 return False
+            # pylint: disable=deprecated-argument
             await asyncio.sleep(sleep, loop=self.redis.connection_pool.loop)
 
     async def do_acquire(self, token):
@@ -136,7 +140,7 @@ class Lock:
         """Releases the already acquired lock"""
         expected_token = self.local.get()
         if expected_token is None:
-            raise LockError("Cannot release an unlocked lock")
+            raise LockError('Cannot release an unlocked lock')
         self.local.set(None)
         await self.do_release(expected_token)
 
@@ -159,9 +163,9 @@ class Lock:
         representing the number of seconds to add.
         """
         if self.local.get() is None:
-            raise LockError("Cannot extend an unlocked lock")
+            raise LockError('Cannot extend an unlocked lock')
         if self.timeout is None:
-            raise LockError("Cannot extend a lock with no timeout")
+            raise LockError('Cannot extend a lock with no timeout')
         return await self.do_extend(additional_time)
 
     async def do_extend(self, additional_time):
@@ -180,9 +184,11 @@ class Lock:
 
         try:
             response = await pipe.execute()
-        except WatchError:
+        except WatchError as e:
             # someone else acquired the lock
-            raise LockError("Cannot extend a lock that's no longer owned")
+            raise LockError(
+                "Cannot extend a lock that's no longer owned") from e
+
         if not response[0]:
             # pexpire returns False if the key doesn't exist
             raise LockError("Cannot extend a lock that's no longer owned")
@@ -230,7 +236,7 @@ class LuaLock(Lock):
     """
 
     def __init__(self, *args, **kwargs):
-        super(LuaLock, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         LuaLock.register_scripts(self.redis)
 
     @classmethod
@@ -249,7 +255,8 @@ class LuaLock(Lock):
     async def do_extend(self, additional_time):
         additional_time = int(additional_time * 1000)
         if not bool(await self.lua_extend.execute(keys=[self.name],
-                                                  args=[self.local.get(), additional_time],
+                                                  args=[
+                                                      self.local.get(), additional_time],
                                                   client=self.redis)):
             raise LockError("Cannot extend a lock that's no longer owned")
         return True
@@ -282,7 +289,7 @@ class ClusterLock(LuaLock):
     """
 
     def __init__(self, *args, **kwargs):
-        super(ClusterLock, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         if not self.timeout:
             raise LockError('timeout must be provided for cluster lock')
 
@@ -298,15 +305,17 @@ class ClusterLock(LuaLock):
             try:
                 # todo: a little bit dirty here, try to reuse StrictRedis later
                 # todo: it may be optimized by using a new connection pool
-                conn = ClusterConnection(host=node['host'], port=node['port'], **conn_kwargs)
+                conn = ClusterConnection(
+                    host=node['host'], port=node['port'], **conn_kwargs)
                 await conn.send_command('get', self.name)
                 res = await conn.read_response()
                 if res == token:
                     count += 1
                 if count >= quorum:
                     return True
-            except Exception as exc:
-                logger.exception('error during check lock {} status in slave nodes'.format(self.name))
+            except Exception:
+                logger.exception('error during check lock %s status in slave nodes',
+                                 self.name)
         return False
 
     async def acquire(self, blocking=None, blocking_timeout=None):
@@ -345,14 +354,17 @@ class ClusterLock(LuaLock):
                     # initial validity time minus the time elapsed during check
                     await self.do_extend(lock_acquired_at - check_finished_at)
                     return True
-                else:
-                    await self.do_release(token)
-                    return False
+
+                await self.do_release(token)
+                return False
+
             if not blocking or mod_time.time() > stop_trying_at:
                 return False
+
+            # pylint: disable=deprecated-argument
             await asyncio.sleep(sleep, loop=self.redis.connection_pool.loop)
 
     async def do_release(self, expected_token):
-        await super(ClusterLock, self).do_release(expected_token)
+        await super().do_release(expected_token)
         if await self.check_lock_in_slaves(expected_token):
             raise LockError('Lock is released in master but not in slave yet')

@@ -1,8 +1,3 @@
-#!/usr/bin/python
-# -*- coding: utf-8 -*-
-from collections import defaultdict
-
-
 class IterCommandMixin:
     """
     convenient function of scan iter, make it a class separately
@@ -10,7 +5,8 @@ class IterCommandMixin:
     """
     RESPONSE_CALLBACKS = {}
 
-    async def scan_iter(self, match=None, count=None, type=None):
+    async def scan_iter(self, match=None, count=None,
+                        type=None):  # pylint: disable=redefined-builtin
         """
         Make an iterator using the SCAN command so that the client doesn't
         need to remember the cursor position.
@@ -82,8 +78,8 @@ class IterCommandMixin:
 
 
 class ClusterIterCommandMixin(IterCommandMixin):
-
-    async def scan_iter(self, match=None, count=None, type=type):
+    async def scan_iter(self, match=None, count=None,
+                        type=type):  # pylint: disable=redefined-builtin
         nodes = await self.cluster_nodes()
         for node in nodes:
             if 'master' in node['flags']:

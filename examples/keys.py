@@ -1,8 +1,8 @@
 #!/usr/bin/python
-# -*- coding: utf-8 -*-
-
 import asyncio
-from yaaredis import StrictRedis, StrictRedisCluster
+
+from yaaredis import StrictRedis
+from yaaredis import StrictRedisCluster
 
 
 async def example_client():

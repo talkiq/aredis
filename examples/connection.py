@@ -1,7 +1,6 @@
 #!/usr/bin/python
-# -*- coding: utf-8 -*-
-
 import asyncio
+
 from yaaredis import Connection
 
 
@@ -19,6 +18,6 @@ async def example(conn):
     print(await conn.read_response())
 
 if __name__ == '__main__':
-    conn = Connection(host='127.0.0.1', port=6379, db=0)
+    connection = Connection(host='127.0.0.1', port=6379, db=0)
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(example(conn))
+    loop.run_until_complete(example(connection))

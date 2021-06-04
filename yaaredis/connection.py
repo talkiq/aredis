@@ -4,23 +4,30 @@ import logging
 import os
 import socket
 import ssl
-import sys
 import time
-
 from io import BytesIO
 
 import yaaredis.compat
-from yaaredis.exceptions import (AuthenticationFailureError,
-                               AuthenticationRequiredError,
-                               ConnectionError, TimeoutError,
-                               RedisError, ExecAbortError,
-                               BusyLoadingError, NoScriptError,
-                               ReadOnlyError, ResponseError,
-                               InvalidResponse, AskError,
-                               MovedError, TryAgainError,
-                               ClusterDownError, ClusterCrossSlotError,
-                               NoPermissionError)
-from yaaredis.utils import b, nativestr, LOOP_DEPRECATED
+from yaaredis.exceptions import AskError
+from yaaredis.exceptions import AuthenticationFailureError
+from yaaredis.exceptions import AuthenticationRequiredError
+from yaaredis.exceptions import BusyLoadingError
+from yaaredis.exceptions import ClusterCrossSlotError
+from yaaredis.exceptions import ClusterDownError
+from yaaredis.exceptions import ConnectionError  # pylint: disable=redefined-builtin
+from yaaredis.exceptions import ExecAbortError
+from yaaredis.exceptions import InvalidResponse
+from yaaredis.exceptions import MovedError
+from yaaredis.exceptions import NoPermissionError
+from yaaredis.exceptions import NoScriptError
+from yaaredis.exceptions import ReadOnlyError
+from yaaredis.exceptions import RedisError
+from yaaredis.exceptions import ResponseError
+from yaaredis.exceptions import TimeoutError  # pylint: disable=redefined-builtin
+from yaaredis.exceptions import TryAgainError
+from yaaredis.utils import b
+from yaaredis.utils import LOOP_DEPRECATED
+from yaaredis.utils import nativestr
 
 try:
     import hiredis
@@ -43,10 +50,9 @@ async def exec_with_timeout(coroutine, timeout, *, loop=None):
     try:
         if LOOP_DEPRECATED:
             return await asyncio.wait_for(coroutine, timeout)
-        else:
-            return await asyncio.wait_for(coroutine, timeout, loop=loop)
+        return await asyncio.wait_for(coroutine, timeout, loop=loop)  # pylint: disable=deprecated-argument
     except asyncio.TimeoutError as exc:
-        raise TimeoutError(exc)
+        raise TimeoutError(exc) from exc
 
 
 class SocketBuffer:
@@ -82,10 +88,8 @@ class SocketBuffer:
                 if length is not None and length > marker:
                     continue
                 break
-        except socket.error:
-            e = sys.exc_info()[1]
-            raise ConnectionError("Error while reading from socket: %s" %
-                                  (e.args,))
+        except OSError as e:
+            raise ConnectionError('Error reading from socket') from e
 
     async def read(self, length):
         length = length + 2  # make sure to read the \r\n terminator
@@ -133,7 +137,7 @@ class SocketBuffer:
         try:
             self.purge()
             self._buffer.close()
-        except:
+        except Exception:
             # issue #633 suggests the purge/close somehow raised a
             # BadFileDescriptor error. Perhaps the client ran out of
             # memory or something else? It's probably OK to ignore
@@ -141,7 +145,6 @@ class SocketBuffer:
             # removing the reference to the instance below.
             pass
         self._buffer = None
-        self._sock = None
 
 
 class BaseParser:
@@ -149,7 +152,7 @@ class BaseParser:
 
     EXCEPTION_CLASSES = {
         'ERR': {
-            'max number of clients reached': ConnectionError
+            'max number of clients reached': ConnectionError,
         },
         'EXECABORT': ExecAbortError,
         'LOADING': BusyLoadingError,
@@ -192,6 +195,7 @@ class PythonParser(BaseParser):
 
     def on_connect(self, connection):
         """Called when the stream connects"""
+        # pylint: disable=protected-access
         self._stream = connection._reader
         self._buffer = SocketBuffer(self._stream, self._read_size)
         if connection.decode_responses:
@@ -210,6 +214,7 @@ class PythonParser(BaseParser):
         return self._buffer and bool(self._buffer.length)
 
     async def read_response(self):
+        # pylint: disable=too-many-branches
         if not self._buffer:
             raise ConnectionError('Socket closed on remote end')
         response = await self._buffer.readline()
@@ -219,7 +224,7 @@ class PythonParser(BaseParser):
         byte, response = chr(response[0]), response[1:]
 
         if byte not in ('-', '+', ':', '$', '*'):
-            raise InvalidResponse("Protocol Error: %s, %s" %
+            raise InvalidResponse('Protocol Error: %s, %s' %
                                   (str(byte), str(response)))
 
         # server returned an error
@@ -236,7 +241,7 @@ class PythonParser(BaseParser):
             # necessary, so just return the exception instance here.
             return error
         # single value
-        elif byte == '+':
+        if byte == '+':
             pass
         # int value
         elif byte == ':':
@@ -253,7 +258,7 @@ class PythonParser(BaseParser):
             if length == -1:
                 return None
             response = []
-            for i in range(length):
+            for _ in range(length):
                 response.append(await self.read_response())
         if isinstance(response, bytes) and self.encoding:
             response = response.decode(self.encoding)
@@ -265,10 +270,11 @@ class HiredisParser(BaseParser):
 
     def __init__(self, read_size):
         if not HIREDIS_AVAILABLE:
-            raise RedisError("Hiredis is not installed")
+            raise RedisError('Hiredis is not installed')
         self._stream = None
         self._reader = None
         self._read_size = read_size
+        self._next_response = False
 
     def __del__(self):
         try:
@@ -278,13 +284,14 @@ class HiredisParser(BaseParser):
 
     def can_read(self):
         if not self._reader:
-            raise ConnectionError("Socket closed on remote end")
+            raise ConnectionError('Socket closed on remote end')
 
         if self._next_response is False:
             self._next_response = self._reader.gets()
         return self._next_response is not False
 
     def on_connect(self, connection):
+        # pylint: disable=protected-access
         self._stream = connection._reader
         kwargs = {
             'protocolError': InvalidResponse,
@@ -293,7 +300,6 @@ class HiredisParser(BaseParser):
         if connection.decode_responses:
             kwargs['encoding'] = connection.encoding
         self._reader = hiredis.Reader(**kwargs)
-        self._next_response = False
 
     def on_disconnect(self):
         if self._stream is not None:
@@ -303,7 +309,7 @@ class HiredisParser(BaseParser):
 
     async def read_response(self):
         if not self._stream:
-            raise ConnectionError("Socket closed on remote end")
+            raise ConnectionError('Socket closed on remote end')
 
         # _next_response might be cached from a can_read() call
         if self._next_response is not False:
@@ -319,11 +325,12 @@ class HiredisParser(BaseParser):
             # For more detailed discussion please see https://github.com/NoneGG/yaaredis/issues/56
             except yaaredis.compat.CancelledError:
                 raise
-            except Exception:
-                e = sys.exc_info()[1]
-                raise ConnectionError("Error {} while reading from stream: {}".format(type(e), e.args))
+            except Exception as e:
+                raise ConnectionError('Error while reading from stream') from e
+
             if not buffer:
-                raise ConnectionError("Socket closed on remote end")
+                raise ConnectionError('Socket closed on remote end')
+
             self._reader.feed(buffer)
             response = self._reader.gets()
         if isinstance(response, ResponseError):
@@ -348,11 +355,11 @@ class RedisSSLContext:
             CERT_REQS = {
                 'none': ssl.CERT_NONE,
                 'optional': ssl.CERT_OPTIONAL,
-                'required': ssl.CERT_REQUIRED
+                'required': ssl.CERT_REQUIRED,
             }
             if cert_reqs not in CERT_REQS:
                 raise RedisError(
-                    "Invalid SSL Certificate Requirements Flag: %s" %
+                    'Invalid SSL Certificate Requirements Flag: %s' %
                     cert_reqs)
             self.cert_reqs = CERT_REQS[cert_reqs]
         self.ca_certs = ca_certs
@@ -371,6 +378,7 @@ class RedisSSLContext:
 
 
 class BaseConnection:
+    # pylint: disable=too-many-instance-attributes
     description = 'BaseConnection'
 
     def __init__(self, retry_on_timeout=False, stream_timeout=None,
@@ -386,8 +394,8 @@ class BaseConnection:
         self.db = ''
         self.pid = os.getpid()
         self.retry_on_timeout = retry_on_timeout
-        self._description_args = dict()
-        self._connect_callbacks = list()
+        self._description_args = {}
+        self._connect_callbacks = []
         self.encoding = encoding
         self.decode_responses = decode_responses
         self.loop = loop
@@ -413,7 +421,7 @@ class BaseConnection:
         self._connect_callbacks.append(callback)
 
     def clear_connect_callbacks(self):
-        self._connect_callbacks = list()
+        self._connect_callbacks = []
 
     async def can_read(self):
         """Checks for data that can be read"""
@@ -426,9 +434,9 @@ class BaseConnection:
             await self._connect()
         except yaaredis.compat.CancelledError:
             raise
-        except Exception:
-            e = sys.exc_info()[1]
-            raise ConnectionError("Error {} during initial connection: {}".format(type(e), e.args))
+        except Exception as e:
+            raise ConnectionError('Error during initial connection') from e
+
         # run any user callbacks. right now the only internal callback
         # is for pubsub channel/pattern resubscription
         for callback in self._connect_callbacks:
@@ -489,20 +497,19 @@ class BaseConnection:
             if isinstance(command, str):
                 command = [command]
             self._writer.writelines(command)
-        except yaaredis.compat.TimeoutError:
+        except yaaredis.compat.TimeoutError as e:
             self.disconnect()
-            raise TimeoutError("Timeout writing to socket")
-        except Exception:
-            e = sys.exc_info()[1]
+            raise TimeoutError('Timeout writing to socket') from e
+        except Exception as e:
             self.disconnect()
             if len(e.args) == 1:
                 errno, errmsg = 'UNKNOWN', e.args[0]
             else:
                 errno = e.args[0]
                 errmsg = e.args[1]
-            raise ConnectionError("Error %s while writing to socket. %s." %
-                                  (errno, errmsg))
-        except:
+            raise ConnectionError('Error %s while writing to socket. %s.' %
+                                  (errno, errmsg)) from e
+        except BaseException:
             self.disconnect()
             raise
 
@@ -517,14 +524,17 @@ class BaseConnection:
         """Returns a bytestring representation of the value"""
         if isinstance(value, bytes):
             return value
-        elif isinstance(value, int):
+
+        if isinstance(value, int):
             value = b(str(value))
         elif isinstance(value, float):
             value = b(repr(value))
         elif not isinstance(value, str):
             value = str(value)
+
         if isinstance(value, str):
             value = value.encode(self.encoding)
+
         return value
 
     def disconnect(self):
@@ -538,7 +548,7 @@ class BaseConnection:
         self._writer = None
 
     def pack_command(self, *args):
-        "Pack a series of arguments into the Redis protocol"
+        'Pack a series of arguments into the Redis protocol'
         output = []
         # the client might have included 1 or more literal arguments in
         # the command name, e.g., 'CONFIG GET'. The Redis server expects these
@@ -547,7 +557,7 @@ class BaseConnection:
         # to prevent them from being encoded.
         command = args[0]
         if ' ' in command:
-            args = tuple([b(s) for s in command.split()]) + args[1:]
+            args = tuple(b(s) for s in command.split()) + args[1:]
         else:
             args = (b(command),) + args[1:]
 
@@ -569,7 +579,7 @@ class BaseConnection:
         return output
 
     def pack_commands(self, commands):
-        "Pack multiple commands into the Redis protocol"
+        'Pack multiple commands into the Redis protocol'
         output = []
         pieces = []
         buffer_length = 0
@@ -590,6 +600,7 @@ class BaseConnection:
 
 
 class Connection(BaseConnection):
+    # pylint: disable=too-many-instance-attributes
     description = 'Connection<host={host},port={port},db={db}>'
 
     def __init__(self, host='127.0.0.1', port=6379, username=None, password=None,
@@ -597,10 +608,11 @@ class Connection(BaseConnection):
                  ssl_context=None, parser_class=DefaultParser, reader_read_size=65535,
                  encoding='utf-8', decode_responses=False, socket_keepalive=None,
                  socket_keepalive_options=None, *, client_name=None, loop=None):
-        super(Connection, self).__init__(retry_on_timeout, stream_timeout,
-                                         parser_class, reader_read_size,
-                                         encoding, decode_responses,
-                                         client_name=client_name, loop=loop)
+        # pylint: disable=too-many-locals
+        super().__init__(retry_on_timeout, stream_timeout,
+                         parser_class, reader_read_size,
+                         encoding, decode_responses,
+                         client_name=client_name, loop=loop)
         self.host = host
         self.port = port
         self.username = username
@@ -611,7 +623,7 @@ class Connection(BaseConnection):
         self._description_args = {
             'host': self.host,
             'port': self.port,
-            'db': self.db
+            'db': self.db,
         }
         self.socket_keepalive = socket_keepalive
         self.socket_keepalive_options = socket_keepalive_options or {}
@@ -623,7 +635,7 @@ class Connection(BaseConnection):
                                     ssl=self.ssl_context,
                                     loop=self.loop),
             self._connect_timeout,
-            loop=self.loop
+            loop=self.loop,
         )
         self._reader = reader
         self._writer = writer
@@ -636,7 +648,7 @@ class Connection(BaseConnection):
                     sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
                     for k, v in self.socket_keepalive_options.items():
                         sock.setsockopt(socket.SOL_TCP, k, v)
-            except (socket.error, TypeError):
+            except (OSError, TypeError):
                 # `socket_keepalive_options` might contain invalid options
                 # causing an error. Do not leave the connection open.
                 writer.close()
@@ -645,16 +657,17 @@ class Connection(BaseConnection):
 
 
 class UnixDomainSocketConnection(BaseConnection):
-    description = "UnixDomainSocketConnection<path={path},db={db}>"
+    # pylint: disable=too-many-instance-attributes
+    description = 'UnixDomainSocketConnection<path={path},db={db}>'
 
     def __init__(self, path='', username=None, password=None,
                  db=0, retry_on_timeout=False, stream_timeout=None, connect_timeout=None,
                  ssl_context=None, parser_class=DefaultParser, reader_read_size=65535,
                  encoding='utf-8', decode_responses=False, *, client_name=None, loop=None):
-        super(UnixDomainSocketConnection, self).__init__(retry_on_timeout, stream_timeout,
-                                                         parser_class, reader_read_size,
-                                                         encoding, decode_responses,
-                                                         client_name=client_name, loop=loop)
+        super().__init__(retry_on_timeout, stream_timeout,
+                         parser_class, reader_read_size,
+                         encoding, decode_responses,
+                         client_name=client_name, loop=loop)
         self.path = path
         self.db = db
         self.username = username
@@ -663,7 +676,7 @@ class UnixDomainSocketConnection(BaseConnection):
         self._connect_timeout = connect_timeout
         self._description_args = {
             'path': self.path,
-            'db': self.db
+            'db': self.db,
         }
 
     async def _connect(self):
@@ -672,7 +685,7 @@ class UnixDomainSocketConnection(BaseConnection):
                                          ssl=self.ssl_context,
                                          loop=self.loop),
             self._connect_timeout,
-            loop=self.loop
+            loop=self.loop,
         )
         self._reader = reader
         self._writer = writer
@@ -680,12 +693,12 @@ class UnixDomainSocketConnection(BaseConnection):
 
 
 class ClusterConnection(Connection):
-    "Manages TCP communication to and from a Redis server"
-    description = "ClusterConnection<host={host},port={port}>"
+    'Manages TCP communication to and from a Redis server'
+    description = 'ClusterConnection<host={host},port={port}>'
 
     def __init__(self, *args, **kwargs):
         self.readonly = kwargs.pop('readonly', False)
-        super(ClusterConnection, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     async def on_connect(self):
         """
@@ -696,7 +709,7 @@ class ClusterConnection(Connection):
             logger.error('SELECT DB is not allowed in cluster mode')
             self.db = ''
 
-        await super(ClusterConnection, self).on_connect()
+        await super().on_connect()
         if self.readonly:
             await self.send_command('READONLY')
             if nativestr(await self.read_response()) != 'OK':

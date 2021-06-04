@@ -1,11 +1,10 @@
-#!/usr/bin/python
-# -*- coding: utf-8 -*-
+# pylint: disable=protected-access
 import socket
 import sys
 
 import pytest
-from yaaredis import (Connection,
-                    UnixDomainSocketConnection)
+
+from yaaredis import Connection
 
 
 @pytest.mark.asyncio(forbid_global_loop=True)
@@ -30,7 +29,7 @@ async def test_connect_tcp_keepalive_options(event_loop):
         loop=event_loop,
         socket_keepalive=True,
         socket_keepalive_options={
-            socket.TCP_KEEPIDLE: 1,
+            socket.TCP_KEEPIDLE: 1,  # pylint: disable=no-member
             socket.TCP_KEEPINTVL: 1,
             socket.TCP_KEEPCNT: 3,
         },
@@ -39,7 +38,7 @@ async def test_connect_tcp_keepalive_options(event_loop):
     sock = conn._writer.transport.get_extra_info('socket')
     assert sock.getsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE) == 1
     for k, v in (
-        (socket.TCP_KEEPIDLE, 1),
+        (socket.TCP_KEEPIDLE, 1),  # pylint: disable=no-member
         (socket.TCP_KEEPINTVL, 1),
         (socket.TCP_KEEPCNT, 3),
     ):

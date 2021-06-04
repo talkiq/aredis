@@ -1,5 +1,3 @@
-from __future__ import with_statement
-
 import asyncio
 import pickle
 import time
@@ -7,9 +5,9 @@ import time
 import pytest
 
 import yaaredis
-from yaaredis.exceptions import ConnectionError
-from yaaredis.utils import b
 from .conftest import skip_if_server_version_lt
+from yaaredis.exceptions import ConnectionError  # pylint: disable=redefined-builtin
+from yaaredis.utils import b
 
 
 async def wait_for_message(pubsub, timeout=0.5, ignore_subscribe_messages=False):
@@ -18,7 +16,7 @@ async def wait_for_message(pubsub, timeout=0.5, ignore_subscribe_messages=False)
     while now < timeout:
         message = await pubsub.get_message(
             ignore_subscribe_messages=ignore_subscribe_messages,
-            timeout=0.01
+            timeout=0.01,
         )
         if message is not None:
             return message
@@ -27,16 +25,18 @@ async def wait_for_message(pubsub, timeout=0.5, ignore_subscribe_messages=False)
     return None
 
 
-def make_message(type, channel, data, pattern=None):
+def make_message(type, channel, data,  # pylint: disable=redefined-builtin
+                 pattern=None):
     return {
         'type': type,
         'pattern': pattern and pattern.encode('utf-8') or None,
         'channel': channel.encode('utf-8'),
-        'data': data.encode('utf-8') if isinstance(data, str) else data
+        'data': data.encode('utf-8') if isinstance(data, str) else data,
     }
 
 
-def make_subscribe_test_data(pubsub, type):
+def make_subscribe_test_data(pubsub,
+                             type):  # pylint: disable=redefined-builtin
     if type == 'channel':
         return {
             'p': pubsub,
@@ -44,16 +44,16 @@ def make_subscribe_test_data(pubsub, type):
             'unsub_type': 'unsubscribe',
             'sub_func': pubsub.subscribe,
             'unsub_func': pubsub.unsubscribe,
-            'keys': ['foo', 'bar', 'uni' + chr(56) + 'code', ]
+            'keys': ['foo', 'bar', 'uni' + chr(56) + 'code'],
         }
-    elif type == 'pattern':
+    if type == 'pattern':
         return {
             'p': pubsub,
             'sub_type': 'psubscribe',
             'unsub_type': 'punsubscribe',
             'sub_func': pubsub.psubscribe,
             'unsub_func': pubsub.punsubscribe,
-            'keys': ['f*', 'b*', 'uni' + chr(56) + '*']
+            'keys': ['f*', 'b*', 'uni' + chr(56) + '*'],
         }
     assert False, 'invalid subscribe type: %s' % type
 
@@ -90,7 +90,7 @@ class TestPubSubSubscribeUnsubscribe:
 
     async def _test_resubscribe_on_reconnection(self, p, sub_type, unsub_type,
                                                 sub_func, unsub_func, keys):
-
+        # pylint: disable=unused-argument
         for key in keys:
             assert await sub_func(key) is None
 
@@ -227,7 +227,7 @@ class TestPubSubSubscribeUnsubscribe:
 
 
 class TestPubSubMessages:
-    def setup_method(self, method):
+    def setup_method(self):
         self.message = None
 
     def message_handler(self, message):
@@ -260,7 +260,7 @@ class TestPubSubMessages:
 
         expected = [
             make_message('message', 'foo', 'test message'),
-            make_message('pmessage', 'foo', 'test message', pattern='f*')
+            make_message('pmessage', 'foo', 'test message', pattern='f*'),
         ]
 
         assert message1 in expected
@@ -297,7 +297,7 @@ class TestPubSubMessages:
 
         expected = [
             make_message('message', 'foo', msg),
-            make_message('pmessage', 'foo', msg, pattern='f*')
+            make_message('pmessage', 'foo', msg, pattern='f*'),
         ]
 
         assert message1 in expected
@@ -380,7 +380,7 @@ class TestPubSubMessages:
 #     def message_handler(self, message):
 #         self.message = message
 #
-#     @pytest.fixture()
+#     @pytest.fixture(scope='function')
 #     def r(self, request):
 #         return _redis_client(request=request, decode_responses=True)
 #

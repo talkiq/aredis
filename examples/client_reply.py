@@ -1,14 +1,19 @@
 """
-`client reply off | on | skip` is hard to be supported by yaaredis gracefully because of the client pool usage.
-The client is supposed to read response from server and release connection after the command being sent.
-But the connection is needed to be always reused if you need to turn on | off | skip the reply,
-it should always be the connection by which you send `client reply` command to server you use to send the rest commands.
+`client reply off | on | skip` is hard to be supported by yaaredis gracefully
+because of the client pool usage.
+
+The client is supposed to read response from server and release connection
+after the command being sent. But the connection is needed to be always reused
+if you need to turn on | off | skip the reply,
+
+it should always be the connection by which you send `client reply` command to
+server you use to send the rest commands.
 
 However, you can use the connection by your self like the example below~
 """
+import asyncio
 
 from yaaredis import Connection
-import asyncio
 
 
 async def skip():
@@ -20,6 +25,7 @@ async def skip():
     await conn.send_command('SET', 'lalala', 1)
     await conn.send_command('SET', 'lalala', 2)
     print(await conn.read_response())
+
 
 async def off_and_on():
     print('turn off response and then turn it ')

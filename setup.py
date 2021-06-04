@@ -1,7 +1,6 @@
-#!/usr/bin/env python
+import pathlib
 import re
 import sys
-import pathlib
 
 
 try:
@@ -9,7 +8,6 @@ try:
     from setuptools.command.test import test as TestCommand
     from setuptools.command.build_ext import build_ext
     from setuptools.extension import Extension
-
 
     class PyTest(TestCommand):
         def finalize_options(self):
@@ -19,7 +17,7 @@ try:
 
         def run_tests(self):
             # import here, because outside the eggs aren't loaded
-            import pytest
+            import pytest  # pylint: disable=import-outside-toplevel
             errno = pytest.main(self.test_args)
             sys.exit(errno)
 
@@ -28,9 +26,9 @@ except ImportError:
     from distutils.core import setup, Extension
     from distutils.command.build_ext import build_ext
 
-
     def PyTest(x):
-        x
+        # wtf?
+        x  # pylint: disable=pointless-statement
 
 
 class custom_build_ext(build_ext):
@@ -82,12 +80,12 @@ https://api.mongodb.org/python/current/installation.html#osx
             self.warn(e)
             self.warn(
                 self.warning_message.format(
-                    target="Extension modules",
+                    target='Extension modules',
                     comment=(
-                        "There is an issue with your platform configuration "
-                        "- see above."
-                    )
-                )
+                        'There is an issue with your platform configuration '
+                        '- see above.'
+                    ),
+                ),
             )
 
     def build_extension(self, ext):
@@ -97,12 +95,12 @@ https://api.mongodb.org/python/current/installation.html#osx
             self.warn(e)
             self.warn(
                 self.warning_message.format(
-                    target="The {} extension ".format(ext.name),
+                    target='The {} extension '.format(ext.name),
                     comment=(
-                        "The output above this warning shows how the "
-                        "compilation failed."
-                    )
-                )
+                        'The output above this warning shows how the '
+                        'compilation failed.'
+                    ),
+                ),
             )
 
 
@@ -115,10 +113,10 @@ with open(str(_ROOT_DIR / 'yaaredis' / '__init__.py')) as f:
     str_regex = r"['\"]([^'\"]*)['\"]"
     try:
         version = re.findall(
-            r"^__version__ = {}$".format(str_regex), f.read(), re.MULTILINE
+            r'^__version__ = {}$'.format(str_regex), f.read(), re.MULTILINE,
         )[0]
-    except IndexError:
-        raise RuntimeError("Unable to find version in __init__.py")
+    except IndexError as e:
+        raise RuntimeError('Unable to find version in __init__.py') from e
 
 setup(
     name='yaaredis',
@@ -131,13 +129,13 @@ setup(
     keywords=['Redis', 'key-value store', 'asyncio'],
     license='MIT',
     packages=['yaaredis', 'yaaredis.commands'],
-    python_requires=">=3.5",
+    python_requires='>=3.5',
     extras_require={'hiredis': ['hiredis>=0.2.0']},
     tests_require=['pytest',
                    'pytest_asyncio>=0.5.0'],
     cmdclass={
         'test': PyTest,
-        'build_ext': custom_build_ext
+        'build_ext': custom_build_ext,
     },
     classifiers=[
         'Development Status :: 5 - Production/Stable',
@@ -148,7 +146,7 @@ setup(
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
-        'Programming Language :: Python :: 3.8'
+        'Programming Language :: Python :: 3.8',
     ],
     ext_modules=[
         Extension(name='yaaredis.speedups',
@@ -159,6 +157,6 @@ setup(
     # so even if a local contextvars module is installed,
     # the one from the standard library will be used.
     install_requires=[
-        'contextvars;python_version<"3.7"'
-    ]
+        'contextvars;python_version<"3.7"',
+    ],
 )

@@ -1,9 +1,8 @@
 #!/usr/bin/python
-# -*- coding: utf-8 -*-
-
-import yaaredis
 import asyncio
 import logging
+
+import yaaredis
 
 
 def my_handler(x):

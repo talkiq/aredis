@@ -1,8 +1,7 @@
 #!/usr/bin/python
-# -*- coding: utf-8 -*-
+import asyncio
 
 import yaaredis
-import asyncio
 from yaaredis.cache import IdentityGenerator
 
 

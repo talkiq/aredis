@@ -1,7 +1,6 @@
 #!/usr/bin/python
-# -*- coding: utf-8 -*-
-
 import asyncio
+
 from yaaredis import StrictRedis
 
 

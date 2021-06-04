@@ -1,12 +1,11 @@
 #!/usr/bin/python
-# -*- coding: utf-8 -*-
-
 import asyncio
 import functools
+
 import yaaredis
 
 
-def cached(app, cache):
+def cached(cache):
     def decorator(func):
         @functools.wraps(func)
         async def _inner(*args, **kwargs):
@@ -23,16 +22,14 @@ def cached(app, cache):
     return decorator
 
 
-cache = yaaredis.StrictRedis().cache('example_cache')
+CACHE = yaaredis.StrictRedis().cache('example_cache')
 
 
-@cached(app='example', cache=cache)
+@cached(cache=CACHE)
 def job(*args, **kwargs):
-    return 'example_results'
+    return 'example_results for job({}, {})'.format(args, kwargs)
 
 
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     loop.run_until_complete(job(111))
-
-

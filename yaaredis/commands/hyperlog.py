@@ -1,8 +1,9 @@
-import string
 import random
-from ..utils import (string_keys_to_dict,
-                          dict_merge,
-                          bool_ok)
+import string
+
+from ..utils import bool_ok
+from ..utils import dict_merge
+from ..utils import string_keys_to_dict
 
 
 class HyperLogCommandMixin:
@@ -11,11 +12,11 @@ class HyperLogCommandMixin:
         string_keys_to_dict('PFADD PFCOUNT', int),
         {
             'PFMERGE': bool_ok,
-        }
+        },
     )
 
     async def pfadd(self, name, *values):
-        "Adds the specified elements to the specified HyperLogLog."
+        'Adds the specified elements to the specified HyperLogLog.'
         return await self.execute_command('PFADD', name, *values)
 
     async def pfcount(self, *sources):
@@ -26,7 +27,7 @@ class HyperLogCommandMixin:
         return await self.execute_command('PFCOUNT', *sources)
 
     async def pfmerge(self, dest, *sources):
-        "Merge N different HyperLogLogs into a single one."
+        'Merge N different HyperLogLogs into a single one.'
         return await self.execute_command('PFMERGE', dest, *sources)
 
 
@@ -50,7 +51,7 @@ class ClusterHyperLogCommandMixin(HyperLogCommandMixin):
         all_k = []
 
         # Fetch all HLL objects via GET and store them client side as strings
-        all_hll_objects = list()
+        all_hll_objects = []
         for hll_key in sources:
             all_hll_objects.append(await self.get(hll_key))
 
@@ -72,7 +73,7 @@ class ClusterHyperLogCommandMixin(HyperLogCommandMixin):
 
         # Do regular PFMERGE operation and store value in random key in {RandomHash}
         tmp_dest = self._random_good_hashslot_key(random_hash_slot)
-        await self.execute_command("PFMERGE", tmp_dest, *all_k)
+        await self.execute_command('PFMERGE', tmp_dest, *all_k)
 
         # Do GET and SET so that result will be stored in the destination object any where in the cluster
         parsed_dest = await self.get(tmp_dest)
@@ -90,10 +91,10 @@ class ClusterHyperLogCommandMixin(HyperLogCommandMixin):
         """
         Generate a good random key with a low probability of collision between any other key.
         """
-        random_id = "{{0}}{1}".format(hashslot, self._random_id())
-        return random_id
+        return '{{{0}}}{1}'.format(hashslot, self._random_id())
 
-    def _random_id(self, size=16, chars=string.ascii_uppercase + string.digits):
+    @staticmethod
+    def _random_id(size=16, chars=string.ascii_uppercase + string.digits):
         """
         Generates a random id based on `size` and `chars` variable.
 

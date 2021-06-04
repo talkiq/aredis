@@ -1,24 +1,11 @@
-# -*- coding: utf-8 -*-
-
-# python std lib
-from __future__ import with_statement
-import re
-
-# rediscluster imports
-from yaaredis import StrictRedisCluster, ClusterConnectionPool
-from yaaredis.utils import b
-from yaaredis.exceptions import RedisClusterException, WatchError, ResponseError, ConnectionError
-from tests.cluster.conftest import _get_client
-
-# 3rd party imports
 import pytest
-from mock import patch
+
+from yaaredis.exceptions import ResponseError
+from yaaredis.exceptions import WatchError
+from yaaredis.utils import b
 
 
 class TestPipeline:
-    """
-    """
-
     @pytest.mark.asyncio()
     async def test_pipeline(self, r):
         await r.flushdb()
@@ -66,7 +53,7 @@ class TestPipeline:
     async def test_pipeline_eval(self, r):
         await r.flushdb()
         async with await r.pipeline(transaction=False) as pipe:
-            await pipe.eval("return {KEYS[1],KEYS[2],ARGV[1],ARGV[2]}", 2, "A{foo}", "B{foo}", "first", "second")
+            await pipe.eval('return {KEYS[1],KEYS[2],ARGV[1],ARGV[2]}', 2, 'A{foo}', 'B{foo}', 'first', 'second')
             res = (await pipe.execute())[0]
             assert res[0] == b('A{foo}')
             assert res[1] == b('B{foo}')
@@ -74,7 +61,7 @@ class TestPipeline:
             assert res[3] == b('second')
 
     @pytest.mark.asyncio()
-    @pytest.mark.xfail(reason="unsupported command: watch")
+    @pytest.mark.xfail(reason='unsupported command: watch')
     async def test_pipeline_no_transaction_watch(self, r):
         await r.flushdb()
         await r.set('a', 0)
@@ -88,7 +75,7 @@ class TestPipeline:
             assert await pipe.execute() == [True]
 
     @pytest.mark.asyncio()
-    @pytest.mark.xfail(reason="unsupported command: watch")
+    @pytest.mark.xfail(reason='unsupported command: watch')
     async def test_pipeline_no_transaction_watch_failure(self, r):
         await r.flushdb()
         await r.set('a', 0)
@@ -151,7 +138,7 @@ class TestPipeline:
             with pytest.raises(ResponseError) as ex:
                 await pipe.execute()
             assert str(ex.value).startswith('Command # 3 (LPUSH c 3) of '
-                                                'pipeline caused error: ')
+                                            'pipeline caused error: ')
 
             # make sure the pipe was restored to a working state
             await pipe.set('z', 'zzz')
@@ -174,7 +161,7 @@ class TestPipeline:
             assert await r.get('z') == b('zzz')
 
     @pytest.mark.asyncio()
-    @pytest.mark.xfail(reason="unsupported command: watch")
+    @pytest.mark.xfail(reason='unsupported command: watch')
     async def test_watch_succeed(self, r):
         await r.flushdb()
         await r.set('a', 1)
@@ -194,7 +181,7 @@ class TestPipeline:
             assert not pipe.watching
 
     @pytest.mark.asyncio()
-    @pytest.mark.xfail(reason="unsupported command: watch")
+    @pytest.mark.xfail(reason='unsupported command: watch')
     async def test_watch_failure(self, r):
         await r.flushdb()
         await r.set('a', 1)
@@ -211,7 +198,7 @@ class TestPipeline:
             assert not pipe.watching
 
     @pytest.mark.asyncio()
-    @pytest.mark.xfail(reason="unsupported command: watch")
+    @pytest.mark.xfail(reason='unsupported command: watch')
     async def test_unwatch(self, r):
         await r.flushdb()
         await r.set('a', 1)
@@ -226,7 +213,7 @@ class TestPipeline:
             assert await pipe.execute() == [b('1')]
 
     @pytest.mark.asyncio()
-    @pytest.mark.xfail(reason="unsupported command: watch")
+    @pytest.mark.xfail(reason='unsupported command: watch')
     async def test_transaction_callable(self, r):
         await r.flushdb()
         await r.set('a', 1)

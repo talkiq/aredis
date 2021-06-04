@@ -1,12 +1,14 @@
-import yaaredis
 import asyncio
-import uvloop
-import time
 import sys
-from functools import wraps
+import time
 from argparse import ArgumentParser
+from functools import wraps
 
-if sys.version_info[0] == 3:
+import uvloop
+
+import yaaredis
+
+if sys.version_info[0] >= 3:
     long = int
 
 
@@ -37,28 +39,25 @@ async def run():
     await r.flushall()
     await set_str(conn=r, num=args.n, pipeline_size=args.P, data_size=args.s)
     await set_int(conn=r, num=args.n, pipeline_size=args.P, data_size=args.s)
-    await get_str(conn=r, num=args.n, pipeline_size=args.P, data_size=args.s)
-    await get_int(conn=r, num=args.n, pipeline_size=args.P, data_size=args.s)
-    await incr(conn=r, num=args.n, pipeline_size=args.P, data_size=args.s)
+    await get_str(conn=r, num=args.n, pipeline_size=args.P)
+    await get_int(conn=r, num=args.n, pipeline_size=args.P)
+    await incr(conn=r, num=args.n, pipeline_size=args.P)
     await lpush(conn=r, num=args.n, pipeline_size=args.P, data_size=args.s)
-    await lrange_300(conn=r, num=args.n, pipeline_size=args.P, data_size=args.s)
-    await lpop(conn=r, num=args.n, pipeline_size=args.P, data_size=args.s)
+    await lrange_300(conn=r, num=args.n, pipeline_size=args.P)
+    await lpop(conn=r, num=args.n, pipeline_size=args.P)
     await hmset(conn=r, num=args.n, pipeline_size=args.P, data_size=args.s)
 
 
 def timer(func):
     @wraps(func)
     async def wrapper(*args, **kwargs):
-        start = time.clock()
+        start = time.perf_counter()
         ret = await func(*args, **kwargs)
-        duration = time.clock() - start
-        if 'num' in kwargs:
-            count = kwargs['num']
-        else:
-            count = args[1]
-        print('{0} - {1} Requests'.format(func.__name__, count))
+        duration = time.perf_counter() - start
+        count = kwargs.get('num', args[1])
+        print('{} - {} Requests'.format(func.__name__, count))
         print('Duration  = {}'.format(duration))
-        print('Rate = {}'.format(count/duration))
+        print('Rate = {}'.format(count / duration))
         print('')
         return ret
     return wrapper
@@ -99,7 +98,7 @@ async def set_int(conn, num, pipeline_size, data_size):
 
 
 @timer
-async def get_str(conn, num, pipeline_size, data_size):
+async def get_str(conn, num, pipeline_size):
     if pipeline_size > 1:
         conn = await conn.pipeline()
 
@@ -114,7 +113,7 @@ async def get_str(conn, num, pipeline_size, data_size):
 
 
 @timer
-async def get_int(conn, num, pipeline_size, data_size):
+async def get_int(conn, num, pipeline_size):
     if pipeline_size > 1:
         conn = await conn.pipeline()
 
@@ -129,7 +128,7 @@ async def get_int(conn, num, pipeline_size, data_size):
 
 
 @timer
-async def incr(conn, num, pipeline_size, *args, **kwargs):
+async def incr(conn, num, pipeline_size):
     if pipeline_size > 1:
         conn = await conn.pipeline()
 
@@ -161,12 +160,12 @@ async def lpush(conn, num, pipeline_size, data_size):
 
 
 @timer
-async def lrange_300(conn, num, pipeline_size, data_size):
+async def lrange_300(conn, num, pipeline_size):
     if pipeline_size > 1:
         conn = await conn.pipeline()
 
     for i in range(num):
-        await conn.lrange('lpush_key', i, i+300)
+        await conn.lrange('lpush_key', i, i + 300)
         if pipeline_size > 1 and i % pipeline_size == 0:
             await conn.execute()
 
@@ -176,7 +175,7 @@ async def lrange_300(conn, num, pipeline_size, data_size):
 
 
 @timer
-async def lpop(conn, num, pipeline_size, data_size):
+async def lpop(conn, num, pipeline_size):
     if pipeline_size > 1:
         conn = await conn.pipeline()
     for i in range(num):
@@ -190,6 +189,8 @@ async def lpop(conn, num, pipeline_size, data_size):
 
 @timer
 async def hmset(conn, num, pipeline_size, data_size):
+    # TODO: conform to data_size
+    # pylint: disable=unused-argument
     if pipeline_size > 1:
         conn = await conn.pipeline()
 

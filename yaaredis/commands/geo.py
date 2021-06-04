@@ -1,5 +1,6 @@
 from ..exceptions import RedisError
-from ..utils import b, nativestr
+from ..utils import b
+from ..utils import nativestr
 
 
 def parse_georadius_generic(response, **options):
@@ -8,20 +9,20 @@ def parse_georadius_generic(response, **options):
         # with other command arguments.
         return response
 
-    if type(response) != list:
+    if not isinstance(response, list):
         response_list = [response]
     else:
         response_list = response
 
-    if not options['withdist'] and not options['withcoord']\
-            and not options['withhash']:
+    if (not options['withdist'] and not options['withcoord']
+            and not options['withhash']):
         # just a bunch of places
         return [nativestr(r) for r in response_list]
 
     cast = {
         'withdist': float,
         'withcoord': lambda ll: (float(ll[0]), float(ll[1])),
-        'withhash': int
+        'withhash': int,
     }
 
     # zip all output results with each casting functino to get
@@ -38,12 +39,12 @@ class GeoCommandMixin:
     RESPONSE_CALLBACKS = {
         'GEOPOS': lambda r: list(map(lambda ll: (float(ll[0]),
                                                  float(ll[1]))
-                                                 if ll is not None else None, r)),
-        'GEOHASH': lambda r: list(r),
+                                     if ll is not None else None, r)),
+        'GEOHASH': list,
         'GEORADIUS': parse_georadius_generic,
         'GEORADIUSBYMEMBER': parse_georadius_generic,
         'GEODIST': float,
-        'GEOADD': int
+        'GEOADD': int,
     }
 
     # GEO COMMANDS
@@ -55,8 +56,8 @@ class GeoCommandMixin:
         the triad latitude, longitude and name.
         """
         if len(values) % 3 != 0:
-            raise RedisError("GEOADD requires places with lon, lat and name"
-                             " values")
+            raise RedisError('GEOADD requires places with lon, lat and name'
+                             ' values')
         return await self.execute_command('GEOADD', name, *values)
 
     async def geodist(self, name, place1, place2, unit=None):
@@ -68,8 +69,8 @@ class GeoCommandMixin:
         """
         pieces = [name, place1, place2]
         if unit and unit not in ('m', 'km', 'mi', 'ft'):
-            raise RedisError("GEODIST invalid unit")
-        elif unit:
+            raise RedisError('GEODIST invalid unit')
+        if unit:
             pieces.append(unit)
         return await self.execute_command('GEODIST', *pieces)
 
@@ -145,11 +146,11 @@ class GeoCommandMixin:
     async def _georadiusgeneric(self, command, *args, **kwargs):
         pieces = list(args)
         if kwargs['unit'] and kwargs['unit'] not in ('m', 'km', 'mi', 'ft'):
-            raise RedisError("GEORADIUS invalid unit")
-        elif kwargs['unit']:
+            raise RedisError('GEORADIUS invalid unit')
+        if kwargs['unit']:
             pieces.append(kwargs['unit'])
         else:
-            pieces.append('m', )
+            pieces.append('m')
 
         for token in ('withdist', 'withcoord', 'withhash'):
             if kwargs[token]:
@@ -159,13 +160,13 @@ class GeoCommandMixin:
             pieces.extend([b('COUNT'), kwargs['count']])
 
         if kwargs['sort'] and kwargs['sort'] not in ('ASC', 'DESC'):
-            raise RedisError("GEORADIUS invalid sort")
-        elif kwargs['sort']:
+            raise RedisError('GEORADIUS invalid sort')
+        if kwargs['sort']:
             pieces.append(b(kwargs['sort']))
 
         if kwargs['store'] and kwargs['store_dist']:
-            raise RedisError("GEORADIUS store and store_dist cant be set"
-                             " together")
+            raise RedisError('GEORADIUS store and store_dist cant be set'
+                             ' together')
 
         if kwargs['store']:
             pieces.extend([b('STORE'), kwargs['store']])

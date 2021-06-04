@@ -14,11 +14,11 @@ class NoPermissionError(RedisError):
     pass
 
 
-class ConnectionError(RedisError):
+class ConnectionError(RedisError):  # pylint: disable=redefined-builtin
     pass
 
 
-class TimeoutError(RedisError):
+class TimeoutError(RedisError):  # pylint: disable=redefined-builtin
     pass
 
 
@@ -62,12 +62,10 @@ class LockError(RedisError, ValueError):
     """Errors acquiring or releasing a lock"""
     # NOTE: For backwards compatability, this class derives from ValueError.
     # This was originally chosen to behave like threading.Lock.
-    pass
 
 
 class CacheError(RedisError):
     """Basic error of yaaredis.cache"""
-    pass
 
 
 class SerializeError(CacheError):
@@ -99,15 +97,15 @@ class ClusterCrossSlotError(ResponseError):
 
 
 class ClusterDownError(ClusterError, ResponseError):
-
     def __init__(self, resp):
+        super().__init__(resp)
         self.args = (resp,)
         self.message = resp
 
 
 class ClusterTransactionError(ClusterError):
-
     def __init__(self, msg):
+        super().__init__(msg)
         self.msg = msg
 
 
@@ -123,6 +121,7 @@ class AskError(ResponseError):
 
     def __init__(self, resp):
         """should only redirect to master node"""
+        super().__init__(resp)
         self.args = (resp,)
         self.message = resp
         slot_id, new_node = resp.split(' ')
@@ -132,9 +131,7 @@ class AskError(ResponseError):
 
 
 class TryAgainError(ResponseError):
-
-    def __init__(self, *args, **kwargs):
-        pass
+    pass
 
 
 class MovedError(AskError):

@@ -1,16 +1,16 @@
 import asyncio
-from ..exceptions import (RedisClusterException,
-                               WatchError)
-from ..utils import (string_keys_to_dict,
-                          bool_ok)
+
+from ..exceptions import WatchError
+from ..utils import bool_ok
+from ..utils import string_keys_to_dict
 
 
 class TransactionCommandMixin:
 
     RESPONSE_CALLBACKS = string_keys_to_dict(
-            'WATCH UNWATCH',
-            bool_ok
-        )
+        'WATCH UNWATCH',
+        bool_ok,
+    )
 
     async def transaction(self, func, *watches, **kwargs):
         """
@@ -31,10 +31,7 @@ class TransactionCommandMixin:
                     return func_value if value_from_callable else exec_value
                 except WatchError:
                     if watch_delay is not None and watch_delay > 0:
-                        await asyncio.sleep(
-                            watch_delay,
-                            loop=self.connection_pool.loop
-                        )
+                        await asyncio.sleep(watch_delay)
                     continue
 
 
@@ -60,8 +57,5 @@ class ClusterTransactionCommandMixin(TransactionCommandMixin):
                     return func_value if value_from_callable else exec_value
                 except WatchError:
                     if watch_delay is not None and watch_delay > 0:
-                        await asyncio.sleep(
-                            watch_delay,
-                            loop=self.connection_pool.loop
-                        )
+                        await asyncio.sleep(watch_delay)
                     continue

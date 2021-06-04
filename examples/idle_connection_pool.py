@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# -*- coding: utf-8 -*-
+# pylint: disable=protected-access
 import asyncio
 import time
 
@@ -7,7 +7,8 @@ from yaaredis import StrictRedis
 
 
 async def example():
-    rs = StrictRedis(host='127.0.0.1', port=6379, db=0, max_idle_time=2, idle_check_interval=0.1)
+    rs = StrictRedis(host='127.0.0.1', port=6379, db=0,
+                     max_idle_time=2, idle_check_interval=0.1)
     print(await rs.info())
     print(rs.connection_pool._available_connections)
     print(rs.connection_pool._in_use_connections)

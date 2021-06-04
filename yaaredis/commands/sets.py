@@ -1,10 +1,11 @@
-from ..utils import (b, dict_merge,
-                          list_or_args,
-                          first_key,
-                          string_keys_to_dict)
+from ..utils import b
+from ..utils import dict_merge
+from ..utils import first_key
+from ..utils import list_or_args
+from ..utils import string_keys_to_dict
 
 
-def parse_sscan(response, **options):
+def parse_sscan(response, **_options):
     cursor, r = response
     return int(cursor), r
 
@@ -15,18 +16,18 @@ class SetsCommandMixin:
         string_keys_to_dict(
             'SADD SCARD SDIFFSTORE '
             'SETRANGE SINTERSTORE '
-            'SREM SUNIONSTORE', int
+            'SREM SUNIONSTORE', int,
         ),
         string_keys_to_dict(
-            'SISMEMBER SMOVE', bool
+            'SISMEMBER SMOVE', bool,
         ),
         string_keys_to_dict(
             'SDIFF SINTER SMEMBERS SUNION',
-            lambda r: r and set(r) or set()
+            lambda r: r and set(r) or set(),
         ),
         {
             'SSCAN': parse_sscan,
-        }
+        },
     )
 
     async def sadd(self, name, *values):
@@ -86,8 +87,7 @@ class SetsCommandMixin:
         """
         if count and isinstance(count, int):
             return await self.execute_command('SPOP', name, count)
-        else:
-            return await self.execute_command('SPOP', name)
+        return await self.execute_command('SPOP', name)
 
     async def srandmember(self, name, number=None):
         """
@@ -97,7 +97,7 @@ class SetsCommandMixin:
         memebers of set ``name``. Note this is only available when running
         Redis 2.6+.
         """
-        args = number and [number] or []
+        args = [number] if number else []
         return await self.execute_command('SRANDMEMBER', name, *args)
 
     async def srem(self, name, *values):
@@ -137,9 +137,8 @@ class SetsCommandMixin:
 class ClusterSetsCommandMixin(SetsCommandMixin):
 
     RESULT_CALLBACKS = {
-        'SSCAN': first_key
+        'SSCAN': first_key,
     }
-
 
     ###
     # Set commands
@@ -204,8 +203,7 @@ class ClusterSetsCommandMixin(SetsCommandMixin):
         if res:
             await self.sadd(dest, *res)
             return len(res)
-        else:
-            return 0
+        return 0
 
     async def smove(self, src, dst, value):
         """

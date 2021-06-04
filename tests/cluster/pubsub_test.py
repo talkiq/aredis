@@ -1,18 +1,11 @@
-# -*- coding: utf-8 -*-
-
-# python std lib
-from __future__ import with_statement
 import asyncio
-import concurrent.futures
 import time
 
-# rediscluster imports
-from yaaredis import StrictRedisCluster, StrictRedis
-from yaaredis.exceptions import ConnectionError, TimeoutError
-from yaaredis.utils import b
-
-# 3rd party imports
 import pytest
+
+from yaaredis import StrictRedis
+from yaaredis import StrictRedisCluster
+from yaaredis.exceptions import ConnectionError  # pylint: disable=redefined-builtin
 
 
 async def wait_for_message(pubsub, timeout=0.5, ignore_subscribe_messages=False):
@@ -21,7 +14,7 @@ async def wait_for_message(pubsub, timeout=0.5, ignore_subscribe_messages=False)
     while now < timeout:
         message = await pubsub.get_message(
             ignore_subscribe_messages=ignore_subscribe_messages,
-            timeout=0.01
+            timeout=0.01,
         )
         if message is not None:
             return message
@@ -30,35 +23,35 @@ async def wait_for_message(pubsub, timeout=0.5, ignore_subscribe_messages=False)
     return None
 
 
-def make_message(type, channel, data, pattern=None):
+def make_message(kind, channel, data, pattern=None):
     return {
-        'type': type,
+        'type': kind,
         'pattern': pattern and pattern.encode('utf-8') or None,
         'channel': channel.encode('utf-8'),
-        'data': data.encode('utf-8') if isinstance(data, str) else data
+        'data': data.encode('utf-8') if isinstance(data, str) else data,
     }
 
 
-def make_subscribe_test_data(pubsub, type):
-    if type == 'channel':
+def make_subscribe_test_data(pubsub, kind):
+    if kind == 'channel':
         return {
             'p': pubsub,
             'sub_type': 'subscribe',
             'unsub_type': 'unsubscribe',
             'sub_func': pubsub.subscribe,
             'unsub_func': pubsub.unsubscribe,
-            'keys': ['foo', 'bar', 'uni' + chr(4456) + 'code']
+            'keys': ['foo', 'bar', 'uni' + chr(4456) + 'code'],
         }
-    elif type == 'pattern':
+    if kind == 'pattern':
         return {
             'p': pubsub,
             'sub_type': 'psubscribe',
             'unsub_type': 'punsubscribe',
             'sub_func': pubsub.psubscribe,
             'unsub_func': pubsub.punsubscribe,
-            'keys': ['f*', 'b*', 'uni' + chr(4456) + '*']
+            'keys': ['f*', 'b*', 'uni' + chr(4456) + '*'],
         }
-    assert False, 'invalid subscribe type: {0}'.format(type)
+    assert False, 'invalid subscribe type: {}'.format(type)
 
 
 class TestPubSubSubscribeUnsubscribe:
@@ -90,7 +83,9 @@ class TestPubSubSubscribeUnsubscribe:
         kwargs = make_subscribe_test_data(r.pubsub(), 'pattern')
         await self._test_subscribe_unsubscribe(**kwargs)
 
-    async def _test_resubscribe_on_reconnection(self, p, sub_type, sub_func, keys, *args, **kwargs):
+    async def _test_resubscribe_on_reconnection(self, p, sub_type, unsub_type,
+                                                sub_func, unsub_func, keys):
+        # pylint: disable=unused-argument
         for key in keys:
             assert await sub_func(key) is None
 
@@ -232,10 +227,14 @@ class TestPubSubMessages:
          are easier to work with.
     """
 
-    def get_strict_redis_node(self, port, host="127.0.0.1"):
+    def __init__(self):
+        self.message = None
+
+    @staticmethod
+    def get_strict_redis_node(port, host='127.0.0.1'):
         return StrictRedis(port=port, host=host)
 
-    def setup_method(self, *args):
+    def setup_method(self):
         self.message = None
 
     def message_handler(self, message):
@@ -257,7 +256,7 @@ class TestPubSubMessages:
         p.close()
 
     @pytest.mark.asyncio
-    @pytest.mark.xfail(reason="This test is buggy and fails randomly")
+    @pytest.mark.xfail(reason='This test is buggy and fails randomly')
     async def test_publish_message_to_channel_other_server(self):
         """
         Test that pubsub still works across the cluster on different nodes
@@ -278,7 +277,7 @@ class TestPubSubMessages:
         p.close()
 
     @pytest.mark.asyncio
-    @pytest.mark.xfail(reason="Pattern pubsub do not work currently")
+    @pytest.mark.xfail(reason='Pattern pubsub do not work currently')
     async def test_published_message_to_pattern(self, r):
         p = r.pubsub(ignore_subscribe_messages=True)
         try:
@@ -294,7 +293,7 @@ class TestPubSubMessages:
 
             expected = [
                 make_message('message', 'foo', 'test message'),
-                make_message('pmessage', 'foo', 'test message', pattern='f*')
+                make_message('pmessage', 'foo', 'test message', pattern='f*'),
             ]
 
             assert message1 in expected
@@ -311,12 +310,13 @@ class TestPubSubMessages:
             await p.subscribe(foo=self.message_handler)
             assert await r.publish('foo', 'test message') == 1
             assert await wait_for_message(p) is None
-            assert self.message == make_message('message', 'foo', 'test message')
+            assert self.message == make_message(
+                'message', 'foo', 'test message')
         finally:
             await p.unsubscribe('foo')
 
     @pytest.mark.asyncio
-    @pytest.mark.xfail(reason="Pattern pubsub do not work currently")
+    @pytest.mark.xfail(reason='Pattern pubsub do not work currently')
     async def test_pattern_message_handler(self, r):
         p = r.pubsub(ignore_subscribe_messages=True)
         await p.psubscribe(**{'f*': self.message_handler})
@@ -326,7 +326,7 @@ class TestPubSubMessages:
                                             pattern='f*')
 
     @pytest.mark.asyncio
-    @pytest.mark.xfail(reason="Pattern pubsub do not work currently")
+    @pytest.mark.xfail(reason='Pattern pubsub do not work currently')
     async def test_unicode_channel_message_handler(self, r):
         p = r.pubsub(ignore_subscribe_messages=True)
         channel = 'uni' + chr(4456) + 'code'
@@ -338,7 +338,7 @@ class TestPubSubMessages:
         assert self.message == make_message('message', channel, 'test message')
 
     @pytest.mark.asyncio
-    @pytest.mark.xfail(reason="Pattern pubsub do not work currently")
+    @pytest.mark.xfail(reason='Pattern pubsub do not work currently')
     async def test_unicode_pattern_message_handler(self, r):
         p = r.pubsub(ignore_subscribe_messages=True)
         pattern = 'uni' + chr(4456) + '*'
@@ -351,18 +351,21 @@ class TestPubSubMessages:
 
 
 class TestPubSubAutoDecoding:
-    "These tests only validate that we get unicode values back"
+    """
+    These tests only validate that we get unicode values back
+    """
 
     channel = 'uni' + chr(4456) + 'code'
     pattern = 'uni' + chr(4456) + '*'
     data = 'abc' + chr(4458) + '123'
 
-    def make_message(self, type, channel, data, pattern=None):
+    @staticmethod
+    def make_message(kind, channel, data, pattern=None):
         return {
-            'type': type,
+            'type': kind,
             'channel': channel,
             'pattern': pattern,
-            'data': data
+            'data': data,
         }
 
     def setup_method(self, *args):
@@ -383,7 +386,7 @@ class TestPubSubAutoDecoding:
                                                               self.channel, 0)
 
     @pytest.mark.asyncio
-    @pytest.mark.xfail(reason="Pattern pubsub do not work currently")
+    @pytest.mark.xfail(reason='Pattern pubsub do not work currently')
     async def test_pattern_subscribe_unsubscribe(self, o):
         p = o.pubsub()
         await p.psubscribe(self.pattern)
@@ -404,7 +407,7 @@ class TestPubSubAutoDecoding:
                                                               self.data)
 
     @pytest.mark.asyncio
-    @pytest.mark.xfail(reason="Pattern pubsub do not work currently")
+    @pytest.mark.xfail(reason='Pattern pubsub do not work currently')
     async def test_pattern_publish(self, o):
         p = o.pubsub(ignore_subscribe_messages=True)
         await p.psubscribe(self.pattern)
@@ -433,7 +436,7 @@ class TestPubSubAutoDecoding:
                                                  new_data)
 
     @pytest.mark.asyncio
-    @pytest.mark.xfail(reason="Pattern pubsub do not work currently")
+    @pytest.mark.xfail(reason='Pattern pubsub do not work currently')
     async def test_pattern_message_handler(self, o):
         p = o.pubsub(ignore_subscribe_messages=True)
         await p.psubscribe(**{self.pattern: self.message_handler})
@@ -470,7 +473,7 @@ def test_pubsub_thread_publish():
     and to test the threading capability of the connectionpool and the publish
     mechanism.
     """
-    startup_nodes = [{"host": "127.0.0.1", "port": "7000"}]
+    startup_nodes = [{'host': '127.0.0.1', 'port': '7000'}]
 
     r = StrictRedisCluster(
         startup_nodes=startup_nodes,
@@ -479,7 +482,7 @@ def test_pubsub_thread_publish():
     )
 
     async def t_run(rc):
-        for i in range(0, 50):
+        for _ in range(0, 50):
             await rc.publish('foo', 'bar')
             await rc.publish('bar', 'foo')
             await rc.publish('asd', 'dsa')
@@ -499,7 +502,7 @@ def test_pubsub_thread_publish():
         loop.run_until_complete(asyncio.gather(*(t_run(r) for _ in range(10))))
     except Exception as e:
         print(e)
-        print("Error: unable to start thread")
+        print('Error: unable to start thread')
 #
 #
 # class TestPubSubPubSubSubcommands:
@@ -527,4 +530,3 @@ def test_pubsub_thread_publish():
 #     def test_pubsub_numpat(self, r):
 #         r.pubsub(ignore_subscribe_messages=True).psubscribe('*oo', '*ar', 'b*z')
 #         assert r.pubsub_numpat() == 3
-

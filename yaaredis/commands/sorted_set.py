@@ -1,12 +1,13 @@
-import re
+# pylint: disable=redefined-builtin
 from ..exceptions import RedisError
-from ..utils import (b, iteritems,
-                          first_key,
-                          iterkeys,
-                          itervalues,
-                          dict_merge,
-                          string_keys_to_dict,
-                          int_or_none)
+from ..utils import b
+from ..utils import dict_merge
+from ..utils import first_key
+from ..utils import int_or_none
+from ..utils import iteritems
+from ..utils import iterkeys
+from ..utils import itervalues
+from ..utils import string_keys_to_dict
 
 VALID_ZADD_OPTIONS = {'NX', 'XX', 'CH', 'INCR'}
 
@@ -37,23 +38,24 @@ def parse_zscan(response, **options):
 
 
 class SortedSetCommandMixin:
+    # pylint: disable=too-many-public-methods
 
     RESPONSE_CALLBACKS = dict_merge(
         string_keys_to_dict(
             'ZADD ZCARD ZLEXCOUNT '
             'ZREM ZREMRANGEBYLEX '
             'ZREMRANGEBYRANK '
-            'ZREMRANGEBYSCORE', int
+            'ZREMRANGEBYSCORE', int,
         ),
         string_keys_to_dict('ZSCORE ZINCRBY', float_or_none),
         string_keys_to_dict(
             'ZRANGE ZRANGEBYSCORE ZREVRANGE ZREVRANGEBYSCORE',
-            zset_score_pairs
+            zset_score_pairs,
         ),
         string_keys_to_dict('ZRANK ZREVRANK', int_or_none),
         {
             'ZSCAN': parse_zscan,
-        }
+        },
     )
 
     async def zadd(self, name, *args, **kwargs):
@@ -70,15 +72,17 @@ class SortedSetCommandMixin:
         pieces = []
         if args:
             if len(args) % 2 != 0:
-                raise RedisError("ZADD requires an equal number of "
-                                 "values and scores")
+                raise RedisError('ZADD requires an equal number of '
+                                 'values and scores')
             pieces.extend(args)
         for pair in iteritems(kwargs):
             pieces.append(pair[1])
             pieces.append(pair[0])
         return await self.execute_command('ZADD', name, *pieces)
 
-    async def zaddoption(self, name, option=None, *args, **kwargs):
+    async def zaddoption(
+            self, name, option=None,
+            *args, **kwargs):  # pylint: disable=keyword-arg-before-vararg
         """
         Differs from zadd in that you can set either 'XX' or 'NX' option as
         described here: https://redis.io/commands/zadd. Only for Redis 3.0.2 or
@@ -89,24 +93,24 @@ class SortedSetCommandMixin:
         redis.zaddoption('my-key', 'NX CH', name1=2.2)
         """
         if not option:
-            raise RedisError("ZADDOPTION must take options")
-        options = set(opt.upper() for opt in option.split())
+            raise RedisError('ZADDOPTION must take options')
+        options = {opt.upper() for opt in option.split()}
         if options - VALID_ZADD_OPTIONS:
-            raise RedisError("ZADD only takes XX, NX, CH, or INCR")
+            raise RedisError('ZADD only takes XX, NX, CH, or INCR')
         if 'NX' in options and 'XX' in options:
-            raise RedisError("ZADD only takes one of XX or NX")
+            raise RedisError('ZADD only takes one of XX or NX')
         pieces = list(options)
         members = []
         if args:
             if len(args) % 2 != 0:
-                raise RedisError("ZADD requires an equal number of "
-                                 "values and scores")
+                raise RedisError('ZADD requires an equal number of '
+                                 'values and scores')
             members.extend(args)
         for pair in iteritems(kwargs):
             members.append(pair[1])
             members.append(pair[0])
         if 'INCR' in options and len(members) != 2:
-            raise RedisError("ZADD with INCR only takes one score-name pair")
+            raise RedisError('ZADD with INCR only takes one score-name pair')
         return await self.execute_command('ZADD', name, *pieces, *members)
 
     async def zcard(self, name):
@@ -164,7 +168,7 @@ class SortedSetCommandMixin:
             pieces.append(b('WITHSCORES'))
         options = {
             'withscores': withscores,
-            'score_cast_func': score_cast_func
+            'score_cast_func': score_cast_func,
         }
         return await self.execute_command(*pieces, **options)
 
@@ -176,9 +180,9 @@ class SortedSetCommandMixin:
         If ``start`` and ``num`` are specified, then return a slice of the
         range.
         """
-        if (start is not None and num is None) or \
-                (num is not None and start is None):
-            raise RedisError("``start`` and ``num`` must both be specified")
+        if ((start is not None and num is None)
+                or (num is not None and start is None)):
+            raise RedisError('``start`` and ``num`` must both be specified')
         pieces = ['ZRANGEBYLEX', name, min, max]
         if start is not None and num is not None:
             pieces.extend([b('LIMIT'), start, num])
@@ -192,9 +196,9 @@ class SortedSetCommandMixin:
         If ``start`` and ``num`` are specified, then return a slice of the
         range.
         """
-        if (start is not None and num is None) or \
-                (num is not None and start is None):
-            raise RedisError("``start`` and ``num`` must both be specified")
+        if ((start is not None and num is None)
+                or (num is not None and start is None)):
+            raise RedisError('``start`` and ``num`` must both be specified')
         pieces = ['ZREVRANGEBYLEX', name, max, min]
         if start is not None and num is not None:
             pieces.extend([b('LIMIT'), start, num])
@@ -214,9 +218,9 @@ class SortedSetCommandMixin:
 
         `score_cast_func`` a callable used to cast the score return value
         """
-        if (start is not None and num is None) or \
-                (num is not None and start is None):
-            raise RedisError("``start`` and ``num`` must both be specified")
+        if ((start is not None and num is None)
+                or (num is not None and start is None)):
+            raise RedisError('``start`` and ``num`` must both be specified')
         pieces = ['ZRANGEBYSCORE', name, min, max]
         if start is not None and num is not None:
             pieces.extend([b('LIMIT'), start, num])
@@ -224,7 +228,7 @@ class SortedSetCommandMixin:
             pieces.append(b('WITHSCORES'))
         options = {
             'withscores': withscores,
-            'score_cast_func': score_cast_func
+            'score_cast_func': score_cast_func,
         }
         return await self.execute_command(*pieces, **options)
 
@@ -282,7 +286,7 @@ class SortedSetCommandMixin:
             pieces.append(b('WITHSCORES'))
         options = {
             'withscores': withscores,
-            'score_cast_func': score_cast_func
+            'score_cast_func': score_cast_func,
         }
         return await self.execute_command(*pieces, **options)
 
@@ -300,9 +304,9 @@ class SortedSetCommandMixin:
 
         ``score_cast_func`` a callable used to cast the score return value
         """
-        if (start is not None and num is None) or \
-                (num is not None and start is None):
-            raise RedisError("``start`` and ``num`` must both be specified")
+        if ((start is not None and num is None)
+                or (num is not None and start is None)):
+            raise RedisError('``start`` and ``num`` must both be specified')
         pieces = ['ZREVRANGEBYSCORE', name, max, min]
         if start is not None and num is not None:
             pieces.extend([b('LIMIT'), start, num])
@@ -310,7 +314,7 @@ class SortedSetCommandMixin:
             pieces.append(b('WITHSCORES'))
         options = {
             'withscores': withscores,
-            'score_cast_func': score_cast_func
+            'score_cast_func': score_cast_func,
         }
         return await self.execute_command(*pieces, **options)
 
@@ -322,7 +326,7 @@ class SortedSetCommandMixin:
         return await self.execute_command('ZREVRANK', name, value)
 
     async def zscore(self, name, value):
-        "Return the score of element ``value`` in sorted set ``name``"
+        'Return the score of element ``value`` in sorted set ``name``'
         return await self.execute_command('ZSCORE', name, value)
 
     async def zunionstore(self, dest, keys, aggregate=None):
@@ -372,5 +376,5 @@ class SortedSetCommandMixin:
 class ClusterSortedSetCommandMixin(SortedSetCommandMixin):
 
     RESULT_CALLBACKS = {
-        'ZSCAN': first_key
+        'ZSCAN': first_key,
     }

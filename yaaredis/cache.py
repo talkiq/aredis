@@ -9,7 +9,7 @@ except ImportError:
 
 from .utils import b
 from .exceptions import (SerializeError,
-                               CompressError)
+                         CompressError)
 
 
 class IdentityGenerator:
@@ -37,8 +37,8 @@ class IdentityGenerator:
         content = self._trans_type(content)
         md5 = hashlib.md5()
         md5.update(content)
-        hash = md5.hexdigest()
-        identity = self.TEMPLATE.format(app=self.app, key=key, content=hash)
+        hash_ = md5.hexdigest()
+        identity = self.TEMPLATE.format(app=self.app, key=key, content=hash_)
         return identity
 
 
@@ -62,7 +62,8 @@ class Compressor:
         elif isinstance(content, float):
             content = b(repr(content))
         if not isinstance(content, bytes):
-            raise TypeError('Wrong data type({}) to compress'.format(type(content)))
+            raise TypeError(
+                'Wrong data type({}) to compress'.format(type(content)))
         return content
 
     def compress(self, content):
@@ -70,22 +71,22 @@ class Compressor:
         if len(content) > self.min_length:
             try:
                 return zlib.compress(content, self.preset)
-            except zlib.error as exc:
-                raise CompressError('Content can not be compressed.')
+            except zlib.error as e:
+                raise CompressError('Content can not be compressed.') from e
         return content
 
     def decompress(self, content):
         content = self._trans_type(content)
         try:
             return zlib.decompress(content)
-        except zlib.error as exc:
-            raise CompressError('Content can not be decompressed.')
+        except zlib.error as e:
+            raise CompressError('Content can not be decompressed.') from e
 
 
 class Serializer:
     """
     Uses json to serialize and deserialize cache to str. You may implement
-    your own Serializer implemting `serialize` and `deserialize` methods.
+    your own Serializer implementing `serialize` and `deserialize` methods.
     """
 
     def __init__(self, encoding='utf-8'):
@@ -95,21 +96,23 @@ class Serializer:
         if isinstance(content, bytes):
             content = content.decode(self.encoding)
         if not isinstance(content, str):
-            raise TypeError('Wrong data type({}) to compress'.format(type(content)))
+            raise TypeError(
+                'Wrong data type({}) to compress'.format(type(content)))
         return content
 
-    def serialize(self, content):
+    @staticmethod
+    def serialize(content):
         try:
             return json.dumps(content)
-        except Exception as exc:
-            raise SerializeError('Content can not be serialized.')
+        except Exception as e:
+            raise SerializeError('Content can not be serialized.') from e
 
     def deserialize(self, content):
         content = self._trans_type(content)
         try:
             return json.loads(content)
-        except Exception as exc:
-            raise SerializeError('Content can not be deserialized.')
+        except Exception as e:
+            raise SerializeError('Content can not be deserialized.') from e
 
 
 class BasicCache:
@@ -129,7 +132,7 @@ class BasicCache:
             self.serializer = serializer_class(encoding)
 
     def __repr__(self):
-        return "{}<{}>".format(type(self).__name__, repr(self.client))
+        return '{}<{}>'.format(type(self).__name__, repr(self.client))
 
     def _gen_identity(self, key, param=None):
         """generate identity according to key and param given"""
@@ -179,7 +182,7 @@ class BasicCache:
         count_deleted = 0
         while cursor != 0:
             cursor, identities = await self.client.scan(
-                cursor=cursor, match=pattern, count=count
+                cursor=cursor, match=pattern, count=count,
             )
             count_deleted += await self.client.delete(*identities)
         return count_deleted
@@ -234,9 +237,9 @@ class HerdCache(BasicCache):
                  default_herd_timeout=1, extend_herd_timeout=1, encoding='utf-8'):
         self.default_herd_timeout = default_herd_timeout
         self.extend_herd_timeout = extend_herd_timeout
-        super(HerdCache, self).__init__(client, app, identity_generator_class,
-                                        compressor_class, serializer_class,
-                                        encoding)
+        super().__init__(client, app, identity_generator_class,
+                         compressor_class, serializer_class,
+                         encoding)
 
     async def set(self, key, value, param=None, expire_time=None, herd_timeout=None):
         """

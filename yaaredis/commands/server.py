@@ -1,23 +1,26 @@
 import datetime
+
 from ..exceptions import RedisError
-from ..utils import (b, bool_ok,
-                          nativestr, dict_merge,
-                          string_keys_to_dict,
-                          list_keys_to_dict,
-                          pairs_to_dict,
-                          NodeFlag)
+from ..utils import b
+from ..utils import bool_ok
+from ..utils import dict_merge
+from ..utils import list_keys_to_dict
+from ..utils import nativestr
+from ..utils import NodeFlag
+from ..utils import pairs_to_dict
+from ..utils import string_keys_to_dict
 
 
-def parse_slowlog_get(response, **options):
+def parse_slowlog_get(response, **_options):
     return [{
-                'id': item[0],
-                'start_time': int(item[1]),
-                'duration': int(item[2]),
-                'command': b(' ').join(item[3])
-            } for item in response]
+        'id': item[0],
+        'start_time': int(item[1]),
+        'duration': int(item[2]),
+        'command': b(' ').join(item[3]),
+    } for item in response]
 
 
-def parse_client_list(response, **options):
+def parse_client_list(response, **_options):
     clients = []
     for c in nativestr(response).splitlines():
         # Values might contain '='
@@ -25,9 +28,9 @@ def parse_client_list(response, **options):
     return clients
 
 
-def parse_config_get(response, **options):
+def parse_config_get(response, **_options):
     response = [nativestr(i) if i is not None else None for i in response]
-    return response and pairs_to_dict(response) or {}
+    return pairs_to_dict(response) if response else {}
 
 
 def timestamp_to_datetime(response):
@@ -71,8 +74,7 @@ def parse_info(response):
             try:
                 if '.' in value:
                     return float(value)
-                else:
-                    return int(value)
+                return int(value)
             except ValueError:
                 return value
         else:
@@ -102,14 +104,14 @@ def parse_role(response):
         res = {
             'role': role,
             'offset': offset,
-            'slaves': []
+            'slaves': [],
         }
         for slave in slaves:
             host, port, offset = slave
             res['slaves'].append({
                 'host': host,
                 'port': int(port),
-                'offset': int(offset)
+                'offset': int(offset),
             })
         return res
 
@@ -120,28 +122,29 @@ def parse_role(response):
             'host': host,
             'port': port,
             'status': status,
-            'offset': offset
+            'offset': offset,
         }
 
     def _parse_sentinel(response):
         return {
             'role': role,
-            'masters': response[1:]
+            'masters': response[1:],
         }
     parser = {
         'master': _parse_master,
         'slave': _parse_slave,
-        'sentinel': _parse_sentinel
+        'sentinel': _parse_sentinel,
     }[role]
     return parser(response)
 
 
 class ServerCommandMixin:
+    # pylint: disable=too-many-public-methods
     RESPONSE_CALLBACKS = dict_merge(
         string_keys_to_dict('BGREWRITEAOF BGSAVE', lambda r: True),
         string_keys_to_dict(
             'FLUSHALL FLUSHDB SAVE '
-            'SHUTDOWN SLAVEOF', bool_ok
+            'SHUTDOWN SLAVEOF', bool_ok,
         ),
         {
             'ROLE': parse_role,
@@ -160,7 +163,7 @@ class ServerCommandMixin:
             'INFO': parse_info,
             'LASTSAVE': timestamp_to_datetime,
             'TIME': lambda x: (int(x[0]), int(x[1])),
-        }
+        },
     )
 
     async def bgrewriteaof(self):
@@ -197,7 +200,7 @@ class ServerCommandMixin:
         """
         return await self.execute_command('CLIENT PAUSE', timeout)
 
-    async def config_get(self, pattern="*"):
+    async def config_get(self, pattern='*'):
         """Returns a dictionary of configuration based on the ``pattern``"""
         return await self.execute_command('CONFIG GET', pattern)
 
@@ -243,8 +246,7 @@ class ServerCommandMixin:
         """
         if section is None:
             return await self.execute_command('INFO')
-        else:
-            return await self.execute_command('INFO', section)
+        return await self.execute_command('INFO', section)
 
     async def lastsave(self):
         """
@@ -267,7 +269,7 @@ class ServerCommandMixin:
         except ConnectionError:
             # a ConnectionError here is expected
             return
-        raise RedisError("SHUTDOWN seems to have failed.")
+        raise RedisError('SHUTDOWN seems to have failed.')
 
     async def slaveof(self, host=None, port=None):
         """
@@ -320,11 +322,11 @@ class ClusterServerCommandMixin(ServerCommandMixin):
     NODES_FLAGS = dict_merge(
         list_keys_to_dict(
             ['SHUTDOWN', 'SLAVEOF', 'CLIENT SETNAME'],
-            NodeFlag.BLOCKED
+            NodeFlag.BLOCKED,
         ),
         list_keys_to_dict(
             ['FLUSHALL', 'FLUSHDB'],
-            NodeFlag.ALL_MASTERS
+            NodeFlag.ALL_MASTERS,
         ),
         list_keys_to_dict(
             ['SLOWLOG LEN', 'SLOWLOG RESET', 'SLOWLOG GET',
@@ -333,8 +335,8 @@ class ClusterServerCommandMixin(ServerCommandMixin):
              'CONFIG GET', 'CONFIG SET', 'CLIENT KILL',
              'CLIENT LIST', 'CLIENT GETNAME', 'INFO',
              'BGSAVE', 'BGREWRITEAOF'],
-            NodeFlag.ALL_NODES
-        )
+            NodeFlag.ALL_NODES,
+        ),
     )
 
     RESULT_CALLBACKS = dict_merge(
@@ -346,6 +348,6 @@ class ClusterServerCommandMixin(ServerCommandMixin):
              'LASTSAVE', 'SAVE', 'SLOWLOG LEN',
              'SLOWLOG RESET', 'TIME', 'FLUSHALL',
              'FLUSHDB'],
-            lambda res: res
-        )
+            lambda res: res,
+        ),
     )

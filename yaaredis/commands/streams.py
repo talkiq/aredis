@@ -1,6 +1,8 @@
 from ..exceptions import RedisError
-from ..utils import (dict_merge, pairs_to_dict,
-                          string_keys_to_dict, bool_ok)
+from ..utils import bool_ok
+from ..utils import dict_merge
+from ..utils import pairs_to_dict
+from ..utils import string_keys_to_dict
 
 
 def stream_list(response):
@@ -8,7 +10,7 @@ def stream_list(response):
     if response:
         for r in response:
             kv_pairs = r[1]
-            kv_dict = dict()
+            kv_dict = {}
             while kv_pairs and len(kv_pairs) > 1:
                 kv_dict[kv_pairs.pop()] = kv_pairs.pop()
             result.append((r[0], kv_dict))
@@ -16,11 +18,7 @@ def stream_list(response):
 
 
 def multi_stream_list(response):
-    result = dict()
-    if response:
-        for r in response:
-            result[r[0]] = stream_list(r[1])
-    return result
+    return {r[0]: stream_list(r[1]) for r in response or ()}
 
 
 def list_of_pairs_to_dict(response):
@@ -45,8 +43,8 @@ class StreamsCommandMixin:
             'XINFO STREAM': parse_xinfo_stream,
             'XINFO CONSUMERS': list_of_pairs_to_dict,
             'XGROUP SETID': bool_ok,
-            'XGROUP CREATE': bool_ok
-        }
+            'XGROUP CREATE': bool_ok,
+        },
     )
 
     async def xadd(self, name: str, entry: dict,
@@ -82,7 +80,7 @@ class StreamsCommandMixin:
         pieces = []
         if max_len is not None:
             if not isinstance(max_len, int) or max_len < 1:
-                raise RedisError("XADD maxlen must be a positive integer")
+                raise RedisError('XADD maxlen must be a positive integer')
             pieces.append('MAXLEN')
             if approximate:
                 pieces.append('~')
@@ -120,8 +118,8 @@ class StreamsCommandMixin:
         pieces = [start, end]
         if count is not None:
             if not isinstance(count, int) or count < 1:
-                raise RedisError("XRANGE count must be a positive integer")
-            pieces.append("COUNT")
+                raise RedisError('XRANGE count must be a positive integer')
+            pieces.append('COUNT')
             pieces.append(str(count))
         return await self.execute_command('XRANGE', name, *pieces)
 
@@ -146,8 +144,8 @@ class StreamsCommandMixin:
         pieces = [start, end]
         if count is not None:
             if not isinstance(count, int) or count < 1:
-                raise RedisError("XREVRANGE count must be a positive integer")
-            pieces.append("COUNT")
+                raise RedisError('XREVRANGE count must be a positive integer')
+            pieces.append('COUNT')
             pieces.append(str(count))
         return await self.execute_command('XREVRANGE', name, *pieces)
 
@@ -176,15 +174,15 @@ class StreamsCommandMixin:
         pieces = []
         if block is not None:
             if not isinstance(block, int) or block < 0:
-                raise RedisError("XREAD block must be a positive integer")
-            pieces.append("BLOCK")
+                raise RedisError('XREAD block must be a positive integer')
+            pieces.append('BLOCK')
             pieces.append(str(block))
         if count is not None:
             if not isinstance(count, int) or count < 1:
-                raise RedisError("XREAD count must be a positive integer")
-            pieces.append("COUNT")
+                raise RedisError('XREAD count must be a positive integer')
+            pieces.append('COUNT')
             pieces.append(str(count))
-        pieces.append("STREAMS")
+        pieces.append('STREAMS')
         ids = []
         for partial_stream in streams.items():
             pieces.append(partial_stream[0])
@@ -221,15 +219,15 @@ class StreamsCommandMixin:
         pieces = ['GROUP', group, consumer_id]
         if block is not None:
             if not isinstance(block, int) or block < 1:
-                raise RedisError("XREAD block must be a positive integer")
-            pieces.append("BLOCK")
+                raise RedisError('XREAD block must be a positive integer')
+            pieces.append('BLOCK')
             pieces.append(str(block))
         if count is not None:
             if not isinstance(count, int) or count < 1:
-                raise RedisError("XREAD count must be a positive integer")
-            pieces.append("COUNT")
+                raise RedisError('XREAD count must be a positive integer')
+            pieces.append('COUNT')
             pieces.append(str(count))
-        pieces.append("STREAMS")
+        pieces.append('STREAMS')
         ids = []
         for partial_stream in streams.items():
             pieces.append(partial_stream[0])

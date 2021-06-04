@@ -1,6 +1,7 @@
 import hashlib
-from .pipeline import BasePipeline
+
 from .exceptions import NoScriptError
+from .pipeline import BasePipeline
 from .utils import b
 
 
@@ -12,8 +13,10 @@ class Script:
         self.script = script
         self.sha = hashlib.sha1(b(script)).hexdigest()
 
-    async def execute(self, keys=[], args=[], client=None):
+    async def execute(self, keys=None, args=None, client=None):
         """Executes the script, passing any required ``args``"""
+        keys = keys or []
+        args = args or []
         if client is None:
             client = self.registered_client
         args = tuple(keys) + tuple(args)

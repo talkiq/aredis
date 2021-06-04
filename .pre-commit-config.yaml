@@ -1,0 +1,136 @@
+repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.0.1
+    hooks:
+    -   id: check-case-conflict
+    -   id: check-executables-have-shebangs
+    -   id: check-json
+    -   id: check-merge-conflict
+    -   id: check-shebang-scripts-are-executable
+    -   id: check-symlinks
+    -   id: check-toml
+    -   id: check-vcs-permalinks
+    -   id: check-xml
+    -   id: check-yaml
+        args: [--allow-multiple-documents]
+    -   id: detect-private-key
+    -   id: end-of-file-fixer
+    -   id: mixed-line-ending
+        args: [--fix=lf]
+    -   id: trailing-whitespace
+
+# python
+    -   id: check-ast
+    -   id: check-builtin-literals
+    -   id: check-docstring-first
+    -   id: debug-statements
+    -   id: double-quote-string-fixer
+    -   id: name-tests-test
+    -   id: requirements-txt-fixer
+-   repo: https://github.com/pycqa/pylint
+    rev: v2.8.3
+    hooks:
+    -   id: pylint
+        additional_dependencies:
+        # TODO: >0.2.0
+        - git+https://github.com/bayesimpact/pylint_import_modules@016f79e4d2
+        args:
+        - --allowed-direct-imports="typing.*"
+        - --load-plugins=pylint_import_modules
+        # - --max-line-length=79  # TODO: enable me
+        - --max-line-length=179
+        - --max-args=10
+        - --score=n
+        - -d broad-except
+        - -d duplicate-code
+        - -d fixme
+        - -d import-error
+        - -d import-only-modules
+        - -d invalid-name
+        - -d locally-disabled
+        - -d missing-docstring
+        - -d too-few-public-methods
+        - -d ungrouped-imports  # conflicts with reorder-python-imports
+        - -d wrong-import-order  # conflicts with reorder-python-imports
+        - -d too-many-arguments  # some redis commands have lots of args
+        - -d unused-argument  # TODO: enable me
+        - -d redefined-outer-name  # TODO: enable me
+        - -d attribute-defined-outside-init  # TODO: enable me
+        - -d arguments-differ  # TODO: enable me
+        - -d cyclic-import  # TODO: enable me
+-   repo: https://github.com/Lucas-C/pre-commit-hooks
+    rev: v1.1.10
+    hooks:
+    -   id: remove-crlf
+    -   id: remove-tabs
+-   repo: https://github.com/asottile/reorder_python_imports
+    rev: v2.5.0
+    hooks:
+    -   id: reorder-python-imports
+        args: [--py3-plus]
+-   repo: https://github.com/asottile/pyupgrade
+    rev: v2.19.1
+    hooks:
+    -   id: pyupgrade
+        args: [--py3-plus]
+# TODO: enable me
+# -   repo: https://github.com/pre-commit/mirrors-mypy
+#     rev: v0.812
+#     hooks:
+#     -   id: mypy
+#         require_serial: True
+#         args:
+#         - --ignore-missing-imports
+#         - --follow-imports=silent
+#         - --show-error-codes
+#         - --strict
+#         - --strict-equality
+#         - --warn-unreachable
+#         exclude: tests/.*
+-   repo: https://github.com/asottile/yesqa
+    rev: v1.2.3
+    hooks:
+    -   id: yesqa
+-   repo: https://github.com/pre-commit/mirrors-autopep8
+    rev: v1.5.7
+    hooks:
+    -   id: autopep8
+# TODO: enable me
+# -   repo: https://github.com/PyCQA/pydocstyle
+#     rev: 6.1.1
+#     hooks:
+#     -   id: pydocstyle
+#         args:
+#         - --ignore=D1,D203,D205,D212,D400,D401,D404,D407,D412,D413
+-   repo: https://gitlab.com/pycqa/flake8
+    rev: 3.9.2
+    hooks:
+    -   id: flake8
+        additional_dependencies:
+        - flake8-2020==1.6.0
+        - flake8-broken-line==0.3.0
+        - flake8-builtins==1.5.3
+        - flake8-commas==2.0.0
+        - flake8-comprehensions==3.3.0
+        args:
+        # TODO: C406 should be ignored inline, but yesqa keeps stripping it out
+        - --ignore=A001,A002,A003,C406,E501,W503,F401,F811
+-   repo: local
+    hooks:
+    -   id: pytest-fixture-require-scope
+        name: Require explicit scope for pytest fixtures
+        description: 'Ensure we explicitly set pytest fixture scopes'
+        entry: '@pytest\.fixture( |\n|(\(\)))'
+        language: pygrep
+        types: [python]
+-   repo: https://github.com/pre-commit/pygrep-hooks
+    rev: v1.8.0
+    hooks:
+    # -   id: python-no-eval  # TODO: enable me
+    # -   id: python-no-log-warn  # TODO: enable me
+    -   id: python-use-type-annotations
+
+# rst
+    -   id: rst-backticks
+    -   id: rst-directive-colons
+    -   id: rst-inline-touching-normal

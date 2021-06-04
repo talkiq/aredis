@@ -1,17 +1,14 @@
-# -*- coding: utf-8 -*-
-
-# python std lib
 import asyncio
+import json
 import os
 import sys
-import json
-
-# rediscluster imports
-from yaaredis import StrictRedisCluster, StrictRedis
-
-# 3rd party imports
-import pytest
 from distutils.version import StrictVersion
+
+import pytest
+
+from yaaredis import __version__
+from yaaredis import StrictRedis
+from yaaredis import StrictRedisCluster
 
 # put our path in front so we can be sure we are testing locally not against the global package
 basepath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -26,7 +23,8 @@ def get_versions(**kwargs):
         client = _get_client(**kwargs)
         loop = asyncio.get_event_loop()
         info = loop.run_until_complete(client.info())
-        _REDIS_VERSIONS[key] = {key: value['redis_version'] for key, value in info.items()}
+        _REDIS_VERSIONS[key] = {key: value['redis_version']
+                                for key, value in info.items()}
     return _REDIS_VERSIONS[key]
 
 
@@ -36,7 +34,7 @@ def _get_client(cls=None, **kwargs):
 
     params = {
         'startup_nodes': [{
-            'host': '127.0.0.1', 'port': 7000
+            'host': '127.0.0.1', 'port': 7000,
         }],
         'stream_timeout': 10,
     }
@@ -45,8 +43,6 @@ def _get_client(cls=None, **kwargs):
 
 
 def _init_mgt_client(request, cls=None, **kwargs):
-    """
-    """
     client = _get_client(cls=cls, **kwargs)
     if request:
         def teardown():
@@ -56,34 +52,26 @@ def _init_mgt_client(request, cls=None, **kwargs):
 
 
 def skip_if_not_password_protected_nodes():
-    """
-    """
-    return pytest.mark.skipif('TEST_PASSWORD_PROTECTED' not in os.environ, reason="")
+    return pytest.mark.skipif('TEST_PASSWORD_PROTECTED' not in os.environ, reason='')
 
 
 def skip_if_server_version_lt(min_version):
-    """
-    """
     versions = get_versions()
     for version in versions.values():
         if StrictVersion(version) < StrictVersion(min_version):
-            return pytest.mark.skipif(True, reason="")
-    return pytest.mark.skipif(False, reason="")
+            return pytest.mark.skipif(True, reason='')
+    return pytest.mark.skipif(False, reason='')
 
 
 def skip_if_redis_py_version_lt(min_version):
-    """
-    """
-    import yaaredis
-    version = yaaredis.__version__
-    version = version.replace('-alpha.', 'a')
+    version = __version__.replace('-alpha.', 'a')
     if StrictVersion(version) < StrictVersion(min_version):
-        return pytest.mark.skipif(True, reason="")
-    return pytest.mark.skipif(False, reason="")
+        return pytest.mark.skipif(True, reason='')
+    return pytest.mark.skipif(False, reason='')
 
 
-@pytest.fixture()
-def o(request, *args, **kwargs):
+@pytest.fixture(scope='function')
+def o(**kwargs):
     """
     Create a StrictRedisCluster instance with decode_responses set to True.
     """
@@ -92,16 +80,16 @@ def o(request, *args, **kwargs):
     return _get_client(cls=StrictRedisCluster, **params)
 
 
-@pytest.fixture()
-def r(request, *args, **kwargs):
+@pytest.fixture(scope='function')
+def r(**kwargs):
     """
     Create a StrictRedisCluster instance with default settings.
     """
     return _get_client(cls=StrictRedisCluster, **kwargs)
 
 
-@pytest.fixture()
-def ro(request, *args, **kwargs):
+@pytest.fixture(scope='function')
+def ro(**kwargs):
     """
     Create a StrictRedisCluster instance with readonly mode
     """
@@ -110,18 +98,18 @@ def ro(request, *args, **kwargs):
     return _get_client(cls=StrictRedisCluster, **params)
 
 
-@pytest.fixture()
-def s(*args, **kwargs):
+@pytest.fixture(scope='function')
+def s(**kwargs):
     """
     Create a StrictRedisCluster instance with 'init_slot_cache' set to false
     """
-    s = _get_client(**kwargs)
-    assert s.connection_pool.nodes.slots == {}
-    assert s.connection_pool.nodes.nodes == {}
-    return s
+    s_ = _get_client(**kwargs)
+    assert s_.connection_pool.nodes.slots == {}
+    assert s_.connection_pool.nodes.nodes == {}
+    return s_
 
 
-@pytest.fixture()
+@pytest.fixture(scope='function')
 def t(*args, **kwargs):
     """
     Create a regular StrictRedis object instance
@@ -129,8 +117,8 @@ def t(*args, **kwargs):
     return StrictRedis(*args, **kwargs)
 
 
-@pytest.fixture()
-def sr(request, *args, **kwargs):
+@pytest.fixture(scope='function')
+def sr(**kwargs):
     """
     Returns a instance of StrictRedisCluster
     """

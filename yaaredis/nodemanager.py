@@ -1,15 +1,13 @@
-# -*- coding: utf-8 -*-
-
 import random
-from .utils import (b, hash_slot)
-from .exceptions import (ConnectionError,
-                               RedisClusterException)
+
+from .exceptions import ConnectionError  # pylint: disable=redefined-builtin
+from .exceptions import RedisClusterException
+from .utils import b
+from .utils import hash_slot
 
 
 class NodeManager:
-    """
-    TODO: document
-    """
+    # pylint: disable=too-many-instance-attributes
     RedisClusterHashSlots = 16384
 
     def __init__(self, startup_nodes=None, reinitialize_steps=None,
@@ -33,22 +31,27 @@ class NodeManager:
         self.reinitialize_steps = reinitialize_steps or 25
         self._skip_full_coverage_check = skip_full_coverage_check
         self.nodemanager_follow_cluster = nodemanager_follow_cluster
+        self.refresh_table_asap = False
 
         if not self.startup_nodes:
-            raise RedisClusterException("No startup nodes provided")
+            raise RedisClusterException('No startup nodes provided')
 
-    def encode(self, value):
+    @staticmethod
+    def encode(value):
         """Returns a bytestring representation of the value"""
         if isinstance(value, bytes):
             return value
-        elif isinstance(value, int):
+
+        if isinstance(value, int):
             value = b(str(value))
         elif isinstance(value, float):
             value = b(repr(value))
         elif not isinstance(value, str):
             value = str(value)
+
         if isinstance(value, str):
             value = value.encode()
+
         return value
 
     def keyslot(self, key):
@@ -60,14 +63,14 @@ class NodeManager:
         for node in self.slots[slot]:
             if node['server_type'] == 'master':
                 return node
+        return None
 
     def all_nodes(self):
-        for node in self.nodes.values():
-            yield node
+        yield from self.nodes.values()
 
     def all_masters(self):
         for node in self.nodes.values():
-            if node["server_type"] == "master":
+            if node['server_type'] == 'master':
                 yield node
 
     def random_startup_node(self):
@@ -82,7 +85,6 @@ class NodeManager:
         return random.choice(list(self.nodes.values()))
 
     def get_redis_link(self, host, port):
-        from .client import StrictRedis
         allowed_keys = (
             'password',
             'stream_timeout',
@@ -91,9 +93,11 @@ class NodeManager:
             'ssl_context',
             'parser_class',
             'reader_read_size',
-            'loop'
+            'loop',
         )
-        connection_kwargs = {k: v for k, v in self.connection_kwargs.items() if k in allowed_keys}
+        connection_kwargs = {
+            k: v for k, v in self.connection_kwargs.items() if k in allowed_keys}
+        from .client import StrictRedis  # pylint: disable=import-outside-toplevel
         return StrictRedis(host=host, port=port, decode_responses=True, **connection_kwargs)
 
     async def initialize(self):
@@ -105,6 +109,8 @@ class NodeManager:
         Maybe it should stop to try after it have correctly covered all slots or when one node is reached
         and it could execute CLUSTER SLOTS command.
         """
+        # pylint: disable=too-many-locals,too-many-nested-blocks
+        # pylint: disable=too-many-branches,too-many-statements
         nodes_cache = {}
         tmp_slots = {}
 
@@ -114,7 +120,8 @@ class NodeManager:
 
         nodes = self.orig_startup_nodes
 
-        # With this option the client will attempt to connect to any of the previous set of nodes instead of the original set of nodes
+        # With this option the client will attempt to connect to any of the
+        # previous set of nodes instead of the original set of nodes
         if self.nodemanager_follow_cluster:
             nodes = self.startup_nodes
 
@@ -125,15 +132,18 @@ class NodeManager:
                 startup_nodes_reachable = True
             except ConnectionError:
                 continue
-            except Exception:
-                raise RedisClusterException('ERROR sending "cluster slots" command to redis server: {0}'.format(node))
+            except Exception as e:
+                raise RedisClusterException(
+                    'ERROR sending "cluster slots" command to redis '
+                    'server: {}'.format(node)) from e
 
             all_slots_covered = True
 
             # If there's only one server in the cluster, its ``host`` is ''
             # Fix it to the host in startup_nodes
             if len(cluster_slots) == 1 and len(self.startup_nodes) == 1:
-                single_node_slots = cluster_slots.get((0, self.RedisClusterHashSlots - 1))[0]
+                single_node_slots = cluster_slots.get(
+                    (0, self.RedisClusterHashSlots - 1))[0]
                 if len(single_node_slots['host']) == 0:
                     single_node_slots['host'] = self.startup_nodes[0]['host']
                     single_node_slots['server_type'] = 'master'
@@ -159,12 +169,12 @@ class NodeManager:
                     else:
                         # Validate that 2 nodes want to use the same slot cache setup
                         if tmp_slots[i][0]['name'] != node['name']:
-                            disagreements.append('{0} vs {1} on slot: {2}'.format(
+                            disagreements.append('{} vs {} on slot: {}'.format(
                                 tmp_slots[i][0]['name'], node['name'], i),
                             )
 
                             if len(disagreements) > 5:
-                                raise RedisClusterException('startup_nodes could not agree on a valid slots cache. {0}'
+                                raise RedisClusterException('startup_nodes could not agree on a valid slots cache. {}'
                                                             .format(', '.join(disagreements)))
 
                 self.populate_startup_nodes()
@@ -190,7 +200,7 @@ class NodeManager:
 
         if not all_slots_covered:
             raise RedisClusterException('Not all slots are covered after query all startup_nodes. '
-                                        '{0} of {1} covered...'.format(len(tmp_slots), self.RedisClusterHashSlots))
+                                        '{} of {} covered...'.format(len(tmp_slots), self.RedisClusterHashSlots))
 
         # Set the tmp variables to the real variables
         self.slots = tmp_slots
@@ -198,7 +208,7 @@ class NodeManager:
         self.reinitialize_counter = 0
 
     async def increment_reinitialize_counter(self, ct=1):
-        for i in range(1, ct):
+        for _ in range(1, ct):
             self.reinitialize_counter += 1
             if self.reinitialize_counter % self.reinitialize_steps == 0:
                 await self.initialize()
@@ -222,23 +232,24 @@ class NodeManager:
                 return True
         return False
 
-    def set_node_name(self, n):
+    @staticmethod
+    def set_node_name(n):
         """
         Formats the name for the given node object
 
         # TODO: This shold not be constructed this way. It should update the name of the node in the node cache dict
         """
         if 'name' not in n:
-            n['name'] = '{0}:{1}'.format(n['host'], n['port'])
+            n['name'] = '{}:{}'.format(n['host'], n['port'])
 
     def set_node(self, host, port, server_type=None):
         """Updates data for a node"""
-        node_name = "{0}:{1}".format(host, port)
+        node_name = '{}:{}'.format(host, port)
         node = {
             'host': host,
             'port': port,
             'name': node_name,
-            'server_type': server_type
+            'server_type': server_type,
         }
         self.nodes[node_name] = node
         return node

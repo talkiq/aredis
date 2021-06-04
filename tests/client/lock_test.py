@@ -1,12 +1,12 @@
-from __future__ import with_statement
-
-import asyncio
+# pylint: disable=protected-access,unidiomatic-typecheck
 import time
 
 import pytest
 
-from yaaredis.exceptions import LockError, ResponseError
-from yaaredis.lock import Lock, LuaLock
+from yaaredis.exceptions import LockError
+from yaaredis.exceptions import ResponseError
+from yaaredis.lock import Lock
+from yaaredis.lock import LuaLock
 
 
 class TestLock:
@@ -71,7 +71,7 @@ class TestLock:
 
     @pytest.mark.asyncio()
     async def test_high_sleep_raises_error(self, r):
-        "If sleep is higher than timeout, it should raise an error"
+        'If sleep is higher than timeout, it should raise an error'
         with pytest.raises(LockError):
             self.get_lock(r, 'foo', timeout=1, sleep=2)
 

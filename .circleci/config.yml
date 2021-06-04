@@ -1,5 +1,8 @@
 version: 2.1
 
+orbs:
+  linter: talkiq/linter@1
+
 jobs:
   pytest-client:
     docker:
@@ -46,6 +49,7 @@ jobs:
 workflows:
   run-jobs:
     jobs:
+      - linter/pre-commit
       - pytest-client:
           name: pytest-<<matrix.python_version>>-client-<<matrix.redis_version>>-hiredis-<<matrix.hiredis>>
           matrix:
@@ -54,7 +58,6 @@ workflows:
               hiredis: [false, true]
               python_version: ['3.5', '3.6', '3.7', '3.8']
               redis_version: ['3', '4', '5', '6']
-
       - pytest-cluster:
           name: pytest-<<matrix.python_version>>-cluster-<<matrix.redis_version>>-hiredis-<<matrix.hiredis>>
           matrix:

@@ -1,11 +1,10 @@
 #!/usr/bin/python
-# -*- coding: utf-8 -*-
-
-import yaaredis
 import asyncio
 import concurrent.futures
-import time
 import logging
+import time
+
+import yaaredis
 
 
 async def wait_for_message(pubsub, timeout=2, ignore_subscribe_messages=False):
@@ -14,7 +13,7 @@ async def wait_for_message(pubsub, timeout=2, ignore_subscribe_messages=False):
     while now < timeout:
         message = await pubsub.get_message(
             ignore_subscribe_messages=ignore_subscribe_messages,
-            timeout=1
+            timeout=1,
         )
         if message is not None:
             print(message)
@@ -41,9 +40,10 @@ async def publish(client):
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
-    client = yaaredis.StrictRedis()
+    rc = yaaredis.StrictRedis()
     loop = asyncio.get_event_loop()
     loop.set_debug(enabled=True)
     with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-        executor.submit(asyncio.run_coroutine_threadsafe, publish(client), loop)
-    loop.run_until_complete(subscribe(client))
+        executor.submit(asyncio.run_coroutine_threadsafe,
+                        publish(rc), loop)
+    loop.run_until_complete(subscribe(rc))

@@ -1,6 +1,8 @@
-from ..utils import (dict_merge, nativestr,
-                          list_keys_to_dict,
-                          NodeFlag, bool_ok)
+from ..utils import bool_ok
+from ..utils import dict_merge
+from ..utils import list_keys_to_dict
+from ..utils import nativestr
+from ..utils import NodeFlag
 
 SENTINEL_STATE_TYPES = {
     'can-failover-its-master': int,
@@ -25,7 +27,7 @@ SENTINEL_STATE_TYPES = {
     's-down-time': int,
     'slave-priority': int,
     'slave-repl-offset': int,
-    'voted-leader-epoch': int
+    'voted-leader-epoch': int,
 }
 
 
@@ -36,7 +38,7 @@ def pairs_to_dict_typed(response, type_info):
         if key in type_info:
             try:
                 value = type_info[key](value)
-            except:
+            except Exception:
                 # if for some reason the value can't be coerced, just use
                 # the string value
                 pass
@@ -73,7 +75,7 @@ def parse_sentinel_slaves_and_sentinels(response):
 
 
 def parse_sentinel_get_master(response):
-    return response and (response[0], int(response[1])) or None
+    return (response[0], int(response[1])) if response else None
 
 
 class SentinelCommandMixin:
@@ -127,6 +129,6 @@ class ClusterSentinelCommands(SentinelCommandMixin):
         list_keys_to_dict(
             ['SENTINEL GET-MASTER-ADDR-BY-NAME', 'SENTINEL MASTER', 'SENTINEL MASTERS',
              'SENTINEL MONITOR', 'SENTINEL REMOVE', 'SENTINEL SENTINELS', 'SENTINEL SET',
-             'SENTINEL SLAVES'], NodeFlag.BLOCKED
-        )
+             'SENTINEL SLAVES'], NodeFlag.BLOCKED,
+        ),
     )

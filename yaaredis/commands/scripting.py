@@ -1,6 +1,8 @@
-from ..utils import (dict_merge, nativestr,
-                          list_keys_to_dict,
-                          NodeFlag, bool_ok)
+from ..utils import bool_ok
+from ..utils import dict_merge
+from ..utils import list_keys_to_dict
+from ..utils import nativestr
+from ..utils import NodeFlag
 
 
 class ScriptingCommandMixin:
@@ -62,7 +64,7 @@ class ScriptingCommandMixin:
         dealing with scripts, keys, and shas. This is the preferred way of
         working with Lua scripts.
         """
-        from yaaredis.scripting import Script
+        from ..scripting import Script  # pylint: disable=import-outside-toplevel
         return Script(self, script)
 
 
@@ -70,15 +72,15 @@ class ClusterScriptingCommandMixin(ScriptingCommandMixin):
 
     NODES_FLAGS = dict_merge(
         {
-        'SCRIPT KILL': NodeFlag.BLOCKED
+            'SCRIPT KILL': NodeFlag.BLOCKED,
         },
         list_keys_to_dict(
-            ["SCRIPT LOAD", "SCRIPT FLUSH", "SCRIPT EXISTS",], NodeFlag.ALL_MASTERS
-        )
+            ['SCRIPT LOAD', 'SCRIPT FLUSH', 'SCRIPT EXISTS'], NodeFlag.ALL_MASTERS,
+        ),
     )
 
     RESULT_CALLBACKS = {
-        "SCRIPT LOAD": lambda res: list(res.values()).pop(),
-        "SCRIPT EXISTS": lambda res: [all(k) for k in zip(*res.values())],
-        "SCRIPT FLUSH": lambda res: all(res.values())
+        'SCRIPT LOAD': lambda res: list(res.values()).pop(),
+        'SCRIPT EXISTS': lambda res: [all(k) for k in zip(*res.values())],
+        'SCRIPT FLUSH': lambda res: all(res.values()),
     }
