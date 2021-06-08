@@ -3,7 +3,7 @@
 
 This is a breaking change! As of v1.1.8+, `aredis` has been hard-forked and
 renamed to `yaaredis`. The `aredis` changelog is maintained below (see
-`1.1.8`_) for posterity.
+`1.1.8`_ for posterity).
 
 #### Breaking Changes
 
