@@ -2,7 +2,6 @@ import sys
 from functools import wraps
 
 from .exceptions import ClusterDownError
-from .exceptions import ClusterUnreachableError
 from .exceptions import RedisClusterException
 
 
@@ -167,12 +166,9 @@ def clusterdown_wrapper(func):
     If the cluster reports it is down it is assumed that:
      - connection_pool was disconnected
      - connection_pool was reset
-     - refresh_table_asap set to True
+     - cluster_down set to True, which will trigger node_manager rebuild
 
-    If the cluster is still unreachable on a retry it will return a
-    ClusterUnreachableError which we also catch.
-
-    It will try 3 times to rerun the command and raises ClusterUnreachableError if it continues to fail.
+    It will try 3 times to rerun the command and raises ClusterDownException if it continues to fail.
     """
 
     @wraps(func)
@@ -180,14 +176,14 @@ def clusterdown_wrapper(func):
         for _ in range(0, 3):
             try:
                 return await func(*args, **kwargs)
-            except (ClusterDownError, ClusterUnreachableError):
+            except ClusterDownError:
                 # Try again with the new cluster setup. All other errors
                 # should be raised.
                 pass
 
         # If it fails 3 times then raise exception back to caller
-        raise ClusterUnreachableError(
-            'Cluster is down or unreachable. Unable to reconnect after 3 tries.')
+        raise ClusterDownError(
+            'CLUSTERDOWN error. Unable to rebuild the cluster')
 
     return inner
 
