@@ -37,6 +37,7 @@ from .connection import UnixDomainSocketConnection
 from .exceptions import AskError
 from .exceptions import BusyLoadingError
 from .exceptions import ClusterDownError
+from .exceptions import ClusterUnreachableError
 from .exceptions import ClusterError
 from .exceptions import ConnectionError  # pylint: disable=redefined-builtin
 from .exceptions import MovedError
