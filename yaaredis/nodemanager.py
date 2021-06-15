@@ -1,7 +1,7 @@
 import random
 
-from .exceptions import ConnectionError  # pylint: disable=redefined-builtin
 from .exceptions import ClusterUnreachableError
+from .exceptions import ConnectionError  # pylint: disable=redefined-builtin
 from .exceptions import RedisClusterException
 from .utils import b
 from .utils import hash_slot
