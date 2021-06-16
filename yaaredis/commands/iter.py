@@ -103,7 +103,12 @@ class ClusterIterCommandMixin(IterCommandMixin):
 
         # maxsize ensures we don't pull too much data into
         # memory if we are not processing it yet
-        queue = asyncio.Queue(maxsize=1000)
+        maxsize = 10 if count is None else count
+        # reducing maxsize by one: the idea here is that the SCAN for an individual
+        # node can never fill the queue in a single iteration, so we'll get at most
+        # one SCAN iteration for each node if the queue is never consumed
+        maxsize -= 1
+        queue = asyncio.Queue(maxsize=maxsize)
         tasks = []
         for node in nodes:
             if 'master' in node['flags']:
