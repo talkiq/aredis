@@ -111,5 +111,5 @@ class ClusterIterCommandMixin(IterCommandMixin):
                 t = asyncio.create_task(iterate_node(node, queue))
                 tasks.append(t)
 
-        while not all(t.done() for t in tasks):
+        while not all(t.done() for t in tasks) or not queue.empty():
             yield await queue.get()
