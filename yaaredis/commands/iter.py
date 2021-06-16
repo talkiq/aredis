@@ -86,7 +86,6 @@ class ClusterIterCommandMixin(IterCommandMixin):
         nodes = await self.cluster_nodes()
 
         async def iterate_node(node, queue):
-            nonlocal match, count, type, nodes
             cursor = '0'
             while cursor != 0:
                 pieces = [cursor]
