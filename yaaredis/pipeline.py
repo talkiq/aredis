@@ -343,7 +343,6 @@ class StrictClusterPipeline(StrictRedisCluster):
                  transaction=False, watches=None):
         # pylint: disable=super-init-not-called
         self.command_stack = []
-        self.refresh_table_asap = False
         self.connection_pool = connection_pool
         self.result_callbacks = result_callbacks or self.__class__.RESULT_CALLBACKS.copy()
         self.startup_nodes = startup_nodes if startup_nodes else []
@@ -354,6 +353,8 @@ class StrictClusterPipeline(StrictRedisCluster):
         self.watches = watches or None
         self.watching = False
         self.explicit_transaction = False
+        self.moved = False
+        self.cluster_down = False
 
     def __repr__(self):
         return '{}'.format(type(self).__name__)
