@@ -1,3 +1,10 @@
+<a name="2.0.1"></a>
+## 2.0.1 (2021-06-18)
+
+#### Performance
+
+* **cluster:**  run scan operation in parallel across nodes (#7) ([4fbb46d0](4fbb46d0))
+
 <a name="2.0.0"></a>
 ## 2.0.0 (2021-06-08)
 
