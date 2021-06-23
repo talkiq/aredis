@@ -7,6 +7,7 @@ import pytest
 
 from tests.cluster.conftest import skip_if_redis_py_version_lt
 from tests.cluster.conftest import skip_if_server_version_lt
+from tests.cluster.conftest import skip_python_version_lt
 from yaaredis.exceptions import DataError
 from yaaredis.exceptions import RedisClusterException
 from yaaredis.exceptions import RedisError
@@ -1568,6 +1569,38 @@ async def test_hvals(r):
     local_vals = list(itervalues(h))
     remote_vals = await r.hvals('a')
     assert sorted(local_vals) == sorted(remote_vals)
+
+
+# SCAN
+@pytest.mark.asyncio
+@skip_python_version_lt('3.6')
+async def test_scan_iter(r):
+    await r.flushdb()
+    await r.set('a', 1)
+    await r.set('b', 2)
+    await r.set('c', 3)
+    keys = set()
+    async for key in r.scan_iter():
+        keys.add(key)
+    assert keys == {b('a'), b('b'), b('c')}
+    async for key in r.scan_iter(match='a'):
+        assert key == b('a')
+
+
+@pytest.mark.asyncio
+@skip_python_version_lt('3.6')
+async def test_scan_iter_multi_page(r):
+    await r.flushdb()
+    await r.set('a', 1)
+    await r.set('b', 2)
+    await r.set('c', 3)
+    await r.set('d', 4)
+    await r.set('e', 5)
+    keys = set()
+    async for key in r.scan_iter(count=1):
+        # three nodes, five items, we've gotta be using a cursor
+        keys.add(key)
+    assert keys == {b('a'), b('b'), b('c'), b('d'), b('e')}
 
 
 # SORT
