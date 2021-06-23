@@ -1,3 +1,12 @@
+<a name="2.0.2"></a>
+## 2.0.2 (2021-06-23)
+
+#### Bug Fixes
+
+* **cluster**:  fixup invalid `Cluster.scan_iter()` default value for `type` param (#10) ([2064e842](2064e842))
+* **cluster**:  fixup support for Python 3.6 in `Cluster.scan_iter()` (#10) ([2064e842](2064e842))
+* **cluster**:  avoid potential pagination race condition in `Cluster.scan_iter()` (#10) ([2064e842](2064e842))
+
 <a name="2.0.1"></a>
 ## 2.0.1 (2021-06-18)
 
