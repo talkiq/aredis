@@ -82,7 +82,7 @@ class IterCommandMixin:
 
 class ClusterIterCommandMixin(IterCommandMixin):
     async def scan_iter(self, match=None, count=None,
-                        type=type):  # pylint: disable=redefined-builtin
+                        type=None):  # pylint: disable=redefined-builtin
         nodes = await self.cluster_nodes()
 
         async def iterate_node(node, queue):
@@ -112,8 +112,17 @@ class ClusterIterCommandMixin(IterCommandMixin):
         tasks = []
         for node in nodes:
             if 'master' in node['flags']:
-                t = asyncio.create_task(iterate_node(node, queue))
+                t = asyncio.ensure_future(iterate_node(node, queue))
                 tasks.append(t)
 
         while not all(t.done() for t in tasks) or not queue.empty():
-            yield await queue.get()
+            try:
+                yield queue.get_nowait()
+            except asyncio.QueueEmpty:
+                # N.B. if we `yield await queue.get()` above, we introduce a
+                # race condition: the last iteration may have occurred in the
+                # last task since our `while` liveness check *and that
+                # iteration may not have appended any data to the queue*.
+                # Instead, we must be careful to avoid `await`ing between
+                # checking for alive tasks and fetching from the queue.
+                await asyncio.sleep(0)
