@@ -11,11 +11,15 @@ TODO: fill this out more completely!
     $ git commit -am 'chore(release): bump version' && git push
     $ git tag x.y.z && git push origin x.y.z
 
-Then create a Github release. If you have access to a build system other than
-our CI (say, if you're running on OSX), you can provide bonus wheels with:
+Then create a Github release and fill in the changelog -- copying the entry
+created above works pretty nicely, but you should also expand upon anything
+especially interesting to users: eg. how to handle breaking changes and such.
+
+If you have access to a build system other than our CI (say, if you're running
+on OSX), you can provide bonus wheels with:
 
 .. code-block:: console
 
     $ rm -rf dist/
     $ poetry build -fwheel
-    $ poetry upload
+    $ poetry publish
