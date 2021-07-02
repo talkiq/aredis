@@ -42,7 +42,7 @@ async def test_set_timeout(r, event_loop):
     content = cache._unpack(content)
     assert content == DATA
 
-    await asyncio.sleep(1)
+    await asyncio.sleep(1.1)
     content = await r.get(identity)
     assert content is None
 

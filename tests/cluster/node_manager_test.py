@@ -6,6 +6,7 @@ from unittest.mock import patch
 import pytest
 
 from tests.cluster.conftest import skip_if_server_version_lt
+from yaaredis import ClusterUnreachableError
 from yaaredis import ConnectionError  # pylint: disable=redefined-builtin
 from yaaredis import RedisClusterException
 from yaaredis import StrictRedis
@@ -392,6 +393,6 @@ async def test_init_with_down_node():
 
     with patch.object(NodeManager, 'get_redis_link', side_effect=get_redis_link):
         n = NodeManager(startup_nodes=[{'host': '127.0.0.1', 'port': 7000}])
-        with pytest.raises(RedisClusterException) as e:
+        with pytest.raises(ClusterUnreachableError) as e:
             await n.initialize()
         assert 'Redis Cluster cannot be connected' in str(e.value)

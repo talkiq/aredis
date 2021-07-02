@@ -14,6 +14,7 @@ from .exceptions import ClusterCrossSlotError
 from .exceptions import ClusterDownError
 from .exceptions import ClusterDownException
 from .exceptions import ClusterError
+from .exceptions import ClusterUnreachableError
 from .exceptions import CompressError
 from .exceptions import ConnectionError  # pylint: disable=redefined-builtin
 from .exceptions import DataError
@@ -42,9 +43,9 @@ __all__ = [
     'AuthenticationFailureError', 'AuthenticationRequiredError',
     'BusyLoadingError', 'CacheError', 'ClusterCrossSlotError',
     'ClusterDownError', 'ClusterDownException', 'ClusterError',
-    'CompressError', 'ConnectionError', 'DataError', 'ExecAbortError',
-    'InvalidResponse', 'LockError', 'NoPermissionError', 'NoScriptError',
-    'PubSubError', 'ReadOnlyError', 'RedisClusterError',
+    'ClusterUnreachableError', 'CompressError', 'ConnectionError', 'DataError',
+    'ExecAbortError', 'InvalidResponse', 'LockError', 'NoPermissionError',
+    'NoScriptError', 'PubSubError', 'ReadOnlyError', 'RedisClusterError',
     'RedisClusterException', 'RedisError', 'ResponseError', 'TimeoutError',
     'WatchError',
 ]
