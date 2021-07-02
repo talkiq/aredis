@@ -165,8 +165,8 @@ def clusterdown_wrapper(func):
 
     If the cluster reports it is down it is assumed that:
      - connection_pool was disconnected
-     - connection_pool was reseted
-     - refereh_table_asap set to True
+     - connection_pool was reset
+     - cluster_down set to True, which will trigger node_manager rebuild
 
     It will try 3 times to rerun the command and raises ClusterDownException if it continues to fail.
     """

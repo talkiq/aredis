@@ -84,6 +84,10 @@ class RedisClusterError(Exception):
     pass
 
 
+class ClusterUnreachableError(Exception):
+    pass
+
+
 class ClusterDownException(Exception):
     pass
 

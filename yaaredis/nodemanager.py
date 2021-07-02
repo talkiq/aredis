@@ -1,5 +1,6 @@
 import random
 
+from .exceptions import ClusterUnreachableError
 from .exceptions import ConnectionError  # pylint: disable=redefined-builtin
 from .exceptions import RedisClusterException
 from .utils import b
@@ -31,7 +32,6 @@ class NodeManager:
         self.reinitialize_steps = reinitialize_steps or 25
         self._skip_full_coverage_check = skip_full_coverage_check
         self.nodemanager_follow_cluster = nodemanager_follow_cluster
-        self.refresh_table_asap = False
 
         if not self.startup_nodes:
             raise RedisClusterException('No startup nodes provided')
@@ -178,7 +178,6 @@ class NodeManager:
                                                             .format(', '.join(disagreements)))
 
                 self.populate_startup_nodes()
-                self.refresh_table_asap = False
 
             if self._skip_full_coverage_check:
                 need_full_slots_coverage = False
@@ -195,8 +194,8 @@ class NodeManager:
                 break
 
         if not startup_nodes_reachable:
-            raise RedisClusterException('Redis Cluster cannot be connected. '
-                                        'Please provide at least one reachable node.')
+            raise ClusterUnreachableError('Redis Cluster cannot be connected. '
+                                          'Please provide at least one reachable node.')
 
         if not all_slots_covered:
             raise RedisClusterException('Not all slots are covered after query all startup_nodes. '

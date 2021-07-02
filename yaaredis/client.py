@@ -38,6 +38,7 @@ from .exceptions import AskError
 from .exceptions import BusyLoadingError
 from .exceptions import ClusterDownError
 from .exceptions import ClusterError
+from .exceptions import ClusterUnreachableError
 from .exceptions import ConnectionError  # pylint: disable=redefined-builtin
 from .exceptions import MovedError
 from .exceptions import RedisClusterException
@@ -294,7 +295,8 @@ class StrictRedisCluster(StrictRedis, *cluster_mixins):
         super().__init__(
             connection_pool=pool, **kwargs)
 
-        self.refresh_table_asap = False
+        self.moved = False
+        self.cluster_down = False
         self.nodes_flags = self.__class__.NODES_FLAGS.copy()
         self.result_callbacks = self.__class__.RESULT_CALLBACKS.copy()
         self.response_callbacks = self.__class__.RESPONSE_CALLBACKS.copy()
@@ -418,10 +420,16 @@ class StrictRedisCluster(StrictRedis, *cluster_mixins):
         if node:
             return await self.execute_command_on_nodes(node, *args, **kwargs)
 
-        # If set externally we must update it before calling any commands
-        if self.refresh_table_asap:
-            await self.connection_pool.nodes.initialize()
-            self.refresh_table_asap = False
+        # rebuild slot->node mapping after a MovedError or ClusterDownError
+        if self.moved or self.cluster_down:
+            try:
+                await self.connection_pool.nodes.initialize()
+            except ClusterUnreachableError:
+                if self.moved:
+                    raise
+                # implicitly pass if cluster_down and cluster not reachable
+            self.cluster_down = False
+            self.moved = False
 
         redirect_addr = None
         asking = False
@@ -440,7 +448,7 @@ class StrictRedisCluster(StrictRedis, *cluster_mixins):
                 r = self.connection_pool.get_random_connection()
                 try_random_node = False
             else:
-                if self.refresh_table_asap:
+                if self.moved:
                     # MOVED
                     node = self.connection_pool.get_master_node_by_slot(slot)
                 else:
@@ -465,7 +473,7 @@ class StrictRedisCluster(StrictRedis, *cluster_mixins):
             except ClusterDownError as e:
                 self.connection_pool.disconnect()
                 self.connection_pool.reset()
-                self.refresh_table_asap = True
+                self.cluster_down = True
 
                 raise e
             except MovedError as e:
@@ -473,7 +481,7 @@ class StrictRedisCluster(StrictRedis, *cluster_mixins):
                 # This counter will increase faster when the same client object
                 # is shared between multiple threads. To reduce the frequency you
                 # can set the variable 'reinitialize_steps' in the constructor.
-                self.refresh_table_asap = True
+                self.moved = True
                 await self.connection_pool.nodes.increment_reinitialize_counter()
 
                 node = self.connection_pool.nodes.set_node(
