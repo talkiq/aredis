@@ -7,6 +7,7 @@ TODO: fill this out more completely!
 
     $ poetry version <kind>
     $ clog -C CHANGELOG.md --setversion <new> -f <old>
+    # edit ./CHANGELOG.md manually to make it easier to read, if need be
     $ git commit -am 'chore(release): bump version' && git push
     $ git tag x.y.z && git push origin x.y.z
 

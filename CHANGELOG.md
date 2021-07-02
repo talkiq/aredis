@@ -1,3 +1,10 @@
+<a name="2.0.3"></a>
+## 2.0.3 (2021-07-02)
+
+#### Bug Fixes
+
+* **cluster:**  fix broken retry logic for ClusterDownErrors (#8) ([a16c35d2](a16c35d2))
+
 <a name="2.0.2"></a>
 ## 2.0.2 (2021-06-23)
 
