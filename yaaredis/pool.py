@@ -28,9 +28,13 @@ def to_bool(value):
 
 
 URL_QUERY_ARGUMENT_PARSERS = {
-    'stream_timeout': float,
     'connect_timeout': float,
+    'idle_check_interval': int,
+    'max_connections': int,
+    'max_idle_time': int,
+    'reader_read_size': int,
     'retry_on_timeout': to_bool,
+    'stream_timeout': float,
 }
 
 

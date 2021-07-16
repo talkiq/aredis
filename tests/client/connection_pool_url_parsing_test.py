@@ -157,6 +157,66 @@ def test_extra_typed_querystring_options():
     }
 
 
+def test_max_connections_querystring_option():
+    pool = yaaredis.ConnectionPool.from_url(
+        'redis://localhost?max_connections=32')
+
+    assert pool.connection_class == yaaredis.Connection
+    assert pool.max_connections == 32
+    assert pool.connection_kwargs == {
+        'host': 'localhost',
+        'port': 6379,
+        'db': 0,
+        'username': None,
+        'password': None,
+    }
+
+
+def test_max_idle_times_querystring_option():
+    pool = yaaredis.ConnectionPool.from_url(
+        'redis://localhost?max_idle_time=5')
+
+    assert pool.connection_class == yaaredis.Connection
+    assert pool.max_idle_time == 5
+    assert pool.connection_kwargs == {
+        'host': 'localhost',
+        'port': 6379,
+        'db': 0,
+        'username': None,
+        'password': None,
+    }
+
+
+def test_idle_check_interval_querystring_option():
+    pool = yaaredis.ConnectionPool.from_url(
+        'redis://localhost?idle_check_interval=1')
+
+    assert pool.connection_class == yaaredis.Connection
+    assert pool.idle_check_interval == 1
+    assert pool.connection_kwargs == {
+        'host': 'localhost',
+        'port': 6379,
+        'db': 0,
+        'username': None,
+        'password': None,
+    }
+
+
+def test_reader_read_size_querystring_option():
+    pool = yaaredis.ConnectionPool.from_url(
+        'redis://localhost?reader_read_size=65535')
+
+    assert pool.connection_class == yaaredis.Connection
+    assert pool.connection_kwargs == {
+        'host': 'localhost',
+        'port': 6379,
+        'db': 0,
+        'reader_read_size': 65535,
+        'username': None,
+        'password': None,
+    }
+
+
 @pytest.mark.parametrize(
     'expected,value',
     [
