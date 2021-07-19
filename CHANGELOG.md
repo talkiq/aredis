@@ -1,3 +1,10 @@
+<a name="2.0.4"></a>
+## 2.0.4 (2021-07-19)
+
+#### Bug Fixes
+
+* **connection:**  avoid hiding timeout errors on connect (#11) ([7186a9b4](7186a9b4))
+
 <a name="2.0.3"></a>
 ## 2.0.3 (2021-07-02)
 
