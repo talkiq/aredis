@@ -432,7 +432,7 @@ class BaseConnection:
     async def connect(self):
         try:
             await self._connect()
-        except yaaredis.compat.CancelledError:
+        except (TimeoutError, yaaredis.compat.CancelledError):
             raise
         except Exception as e:
             raise ConnectionError('Error during initial connection') from e
