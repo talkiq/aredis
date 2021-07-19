@@ -23,3 +23,12 @@ on OSX), you can provide bonus wheels with:
     $ rm -rf dist/
     $ poetry build -fwheel
     $ poetry publish
+
+If you're feeling even more generous, you can build for multiple Python
+versions with the following (TODO: do this via poetry):
+
+.. code-block:: console
+
+    $ rm -rf dist/
+    $ for version in 3.6 3.7 3.8 3.9; do poetry env use $version; poetry run pip wheel yaaredis -w dist/; done
+    $ poetry publish
