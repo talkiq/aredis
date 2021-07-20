@@ -354,11 +354,9 @@ class PubSubWorkerThread(threading.Thread):
                 self.pubsub.unsubscribe(), self.loop)
             punsubscribed = asyncio.run_coroutine_threadsafe(
                 self.pubsub.punsubscribe(), self.loop)
-            # pylint: disable=deprecated-argument
-            asyncio.wait(
-                [unsubscribed, punsubscribed],
-                loop=self.loop,
-            )
+            # TODO: this isn't actually awaited... we probably should call
+            # `Future.result()` on these?
+            asyncio.wait([unsubscribed, punsubscribed])
 
 
 class ClusterPubSub(PubSub):
