@@ -11,9 +11,9 @@ async def example():
     slots = await cluster.cluster_slots()
     master_node = slots[(5461, 10922)][0]['node_id']
     slave_node = slots[(5461, 10922)][1]['node_id']
-    print('master: {}'.format(master_node))
-    print('slave: {}'.format(slave_node))
-    print('nodes: {}'.format(await cluster.cluster_info()))
+    print(f'master: {master_node}')
+    print(f'slave: {slave_node}')
+    print(f'nodes: {await cluster.cluster_info()}')
     for _ in range(2):
         # forget a node twice to see if error will be raised
         try:

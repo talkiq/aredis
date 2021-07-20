@@ -17,7 +17,7 @@ from yaaredis.utils import b
 
 async def redis_server_time(client):
     seconds, milliseconds = await client.time()
-    timestamp = float('{}.{}'.format(seconds, milliseconds))
+    timestamp = float(f'{seconds}.{milliseconds}')
     return datetime.datetime.fromtimestamp(timestamp)
 
 

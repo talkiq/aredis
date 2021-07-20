@@ -19,7 +19,7 @@ pytestmark = skip_if_server_version_lt('2.9.0')
 async def redis_server_time(client):
     t = await client.time()
     seconds, milliseconds = list(t.values())[0]
-    timestamp = float('{}.{}'.format(seconds, milliseconds))
+    timestamp = float(f'{seconds}.{milliseconds}')
     return datetime.datetime.fromtimestamp(timestamp)
 
 

@@ -14,9 +14,9 @@ async def func2():
         startup_nodes=[{'host': '127.0.0.1', 'port': 7001}], decode_responses=True)
     while True:
         foobar = int(await cluster.get('foobar'))
-        print('thread: get `foobar` = {}'.format(foobar))
+        print(f'thread: get `foobar` = {foobar}')
         if foobar >= 0:
-            print('thread: cluster get foobar == {}, decrease it'.format(foobar))
+            print(f'thread: cluster get foobar == {foobar}, decrease it')
             await cluster.decr('foobar', 1)
         if foobar < 0:
             print('thread: break loop now')

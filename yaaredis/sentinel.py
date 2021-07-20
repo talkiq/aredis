@@ -28,7 +28,7 @@ class SentinelManagedConnection(Connection):
     def __repr__(self):
         pool = self.connection_pool
         if self.host:
-            host_info = ',host={},port={}'.format(self.host, self.port)
+            host_info = f',host={self.host},port={self.port}'
         else:
             host_info = ''
         s = '{}<service={}{}>'.format(
@@ -228,7 +228,7 @@ class Sentinel:
                     sentinel, self.sentinels[0])
                 return state['ip'], state['port']
         raise MasterNotFoundError(
-            'No master found for {!r}'.format(service_name))
+            f'No master found for {service_name!r}')
 
     @staticmethod
     def filter_slaves(slaves):

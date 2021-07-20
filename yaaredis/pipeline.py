@@ -357,7 +357,7 @@ class StrictClusterPipeline(StrictRedisCluster):
         self.cluster_down = False
 
     def __repr__(self):
-        return '{}'.format(type(self).__name__)
+        return f'{type(self).__name__}'
 
     def __del__(self):
         self.reset()
@@ -384,7 +384,7 @@ class StrictClusterPipeline(StrictRedisCluster):
             slots = {self.connection_pool.nodes.keyslot(key) for key in keys}
             if len(slots) != 1:
                 raise RedisClusterException(
-                    '{} - all keys must map to the same key slot'.format(command))
+                    f'{command} - all keys must map to the same key slot')
             return slots.pop()
 
         key = args[1]

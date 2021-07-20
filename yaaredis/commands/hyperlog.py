@@ -91,7 +91,7 @@ class ClusterHyperLogCommandMixin(HyperLogCommandMixin):
         """
         Generate a good random key with a low probability of collision between any other key.
         """
-        return '{{{0}}}{1}'.format(hashslot, self._random_id())
+        return f'{{{hashslot}}}{self._random_id()}'
 
     @staticmethod
     def _random_id(size=16, chars=string.ascii_uppercase + string.digits):

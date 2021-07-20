@@ -18,7 +18,7 @@ class GetRedisKeyHandler(RequestHandler):
     async def get(self):
         key = self.get_argument('key')
         res = await self.redis_client.get(key)
-        print('key: {} val: {} in redis'.format(key, res))
+        print(f'key: {key} val: {res} in redis')
         self.write(res)
 
 
