@@ -1,4 +1,3 @@
-import sys
 from functools import wraps
 
 from .exceptions import ClusterDownError
@@ -12,8 +11,6 @@ try:
     _C_EXTENSION_SPEEDUP = True
 except Exception:
     pass
-
-LOOP_DEPRECATED = sys.version_info >= (3, 8)
 
 
 def b(x):
