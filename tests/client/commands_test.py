@@ -8,7 +8,6 @@ import pytest
 
 import yaaredis
 from .conftest import skip_if_server_version_lt
-from .conftest import skip_python_version_lt
 from yaaredis.commands.server import parse_info
 from yaaredis.exceptions import DataError
 from yaaredis.exceptions import RedisError
@@ -983,7 +982,6 @@ class TestRedisCommands:
         assert set(keys) == {b('a')}
 
     @skip_if_server_version_lt('2.8.0')
-    @skip_python_version_lt('3.6')
     @pytest.mark.asyncio(forbid_global_loop=True)
     async def test_scan_iter(self, r):
         await r.flushdb()
@@ -1009,7 +1007,6 @@ class TestRedisCommands:
         assert set(members) == {b('1')}
 
     @skip_if_server_version_lt('2.8.0')
-    @skip_python_version_lt('3.6')
     @pytest.mark.asyncio(forbid_global_loop=True)
     async def test_sscan_iter(self, r):
         await r.flushdb()
@@ -1033,7 +1030,6 @@ class TestRedisCommands:
         assert dic == {b('a'): b('1')}
 
     @skip_if_server_version_lt('2.8.0')
-    @skip_python_version_lt('3.6')
     @pytest.mark.asyncio(forbid_global_loop=True)
     async def test_hscan_iter(self, r):
         await r.flushdb()
@@ -1057,7 +1053,6 @@ class TestRedisCommands:
         assert set(pairs) == {(b('a'), 1)}
 
     @skip_if_server_version_lt('2.8.0')
-    @skip_python_version_lt('3.6')
     @pytest.mark.asyncio(forbid_global_loop=True)
     async def test_zscan_iter(self, r):
         await r.zadd('a', 1, 'a', 2, 'b', 3, 'c')

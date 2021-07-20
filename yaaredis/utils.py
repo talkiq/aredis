@@ -36,24 +36,6 @@ def itervalues(x):
     return iter(x.values())
 
 
-def ban_python_version_lt(min_version):
-    min_version = tuple(map(int, min_version.split('.')))
-
-    def decorator(func):
-        @wraps(func)
-        def _inner(*args, **kwargs):
-            if sys.version_info[:2] < min_version:
-                raise OSError(
-                    '{} not supported in Python version less than {}'
-                    .format(func.__name__, min_version),
-                )
-            return func(*args, **kwargs)
-
-        return _inner
-
-    return decorator
-
-
 class dummy:
     """
     Instances of this class can be used as an attribute container.
