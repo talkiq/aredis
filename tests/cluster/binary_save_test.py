@@ -4,8 +4,6 @@ import pytest
 
 from yaaredis.commands.server import parse_info
 from yaaredis.utils import b
-from yaaredis.utils import iteritems
-from yaaredis.utils import iterkeys
 
 
 @pytest.mark.asyncio
@@ -37,14 +35,14 @@ async def test_binary_lists(r):
         b('foo\tbar\x07'): [b('7'), b('8'), b('9')],
     }
     # fill in lists
-    for key, value in iteritems(mapping):
+    for key, value in iter(mapping.items()):
         await r.rpush(key, *value)
 
     # check that KEYS returns all the keys as they are
-    assert sorted(await r.keys('*')) == sorted(iterkeys(mapping))
+    assert sorted(await r.keys('*')) == sorted(iter(mapping.keys()))
 
     # check that it is possible to get list content by key name
-    for key, value in iteritems(mapping):
+    for key, value in iter(mapping.items()):
         assert await r.lrange(key, 0, -1) == value
 
 

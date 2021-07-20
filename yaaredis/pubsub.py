@@ -5,8 +5,6 @@ from .compat import CancelledError
 from .exceptions import ConnectionError  # pylint: disable=redefined-builtin
 from .exceptions import PubSubError
 from .exceptions import TimeoutError  # pylint: disable=redefined-builtin
-from .utils import iteritems
-from .utils import iterkeys
 from .utils import list_or_args
 from .utils import nativestr
 
@@ -79,14 +77,14 @@ class PubSub:
         # before passing them to [p]subscribe.
         if self.channels:
             channels = {}
-            for k, v in iteritems(self.channels):
+            for k, v in iter(self.channels.items()):
                 if not self.decode_responses:
                     k = k.decode(self.encoding)
                 channels[k] = v
             await self.subscribe(**channels)
         if self.patterns:
             patterns = {}
-            for k, v in iteritems(self.patterns):
+            for k, v in iter(self.patterns.items()):
                 if not self.decode_responses:
                     k = k.decode(self.encoding)
                 patterns[k] = v
@@ -175,10 +173,10 @@ class PubSub:
             args = list_or_args(args[0], args[1:])
         new_patterns = {}
         new_patterns.update(dict.fromkeys(map(self.encode, args)))
-        for pattern, handler in iteritems(kwargs):
+        for pattern, handler in iter(kwargs.items()):
             new_patterns[self.encode(pattern)] = handler
         ret_val = await self.execute_command('PSUBSCRIBE',
-                                             *iterkeys(new_patterns))
+                                             *iter(new_patterns.keys()))
         # update the patterns dict AFTER we send the command. we don't want to
         # subscribe twice to these patterns, once for the command and again
         # for the reconnection.
@@ -210,10 +208,10 @@ class PubSub:
             args = list_or_args(args[0], args[1:])
         new_channels = {}
         new_channels.update(dict.fromkeys(map(self.encode, args)))
-        for channel, handler in iteritems(kwargs):
+        for channel, handler in iter(kwargs.items()):
             new_channels[self.encode(channel)] = handler
         ret_val = await self.execute_command('SUBSCRIBE',
-                                             *iterkeys(new_channels))
+                                             *iter(new_channels.keys()))
         # update the channels dict AFTER we send the command. we don't want to
         # subscribe twice to these channels, once for the command and again
         # for the reconnection.
@@ -304,11 +302,11 @@ class PubSub:
         return message
 
     def run_in_thread(self, daemon=False, poll_timeout=1.0):
-        for channel, handler in iteritems(self.channels):
+        for channel, handler in iter(self.channels.items()):
             if handler is None:
                 raise PubSubError("Channel: '{}' has no handler registered"
                                   .format(channel))
-        for pattern, handler in iteritems(self.patterns):
+        for pattern, handler in iter(self.patterns.items()):
             if handler is None:
                 raise PubSubError("Pattern: '{}' has no handler registered"
                                   .format(pattern))

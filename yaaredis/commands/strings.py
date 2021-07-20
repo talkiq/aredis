@@ -5,7 +5,6 @@ from collections import defaultdict
 from ..exceptions import RedisError
 from ..utils import bool_ok
 from ..utils import dict_merge
-from ..utils import iteritems
 from ..utils import list_or_args
 from ..utils import nativestr
 from ..utils import NodeFlag
@@ -211,7 +210,7 @@ class StringsCommandMixin:
                 raise RedisError('MSET requires **kwargs or a single dict arg')
             kwargs.update(args[0])
         items = []
-        for pair in iteritems(kwargs):
+        for pair in iter(kwargs.items()):
             items.extend(pair)
         return await self.execute_command('MSET', *items)
 
@@ -227,7 +226,7 @@ class StringsCommandMixin:
                                  'dict arg')
             kwargs.update(args[0])
         items = []
-        for pair in iteritems(kwargs):
+        for pair in iter(kwargs.items()):
             items.extend(pair)
         return await self.execute_command('MSETNX', *items)
 
@@ -406,7 +405,7 @@ class ClusterStringsCommandMixin(StringsCommandMixin):
             kwargs.update(args[0])
 
         hash_tag_slots = defaultdict(list)
-        for pair in iteritems(kwargs):
+        for pair in iter(kwargs.items()):
             key, v = pair
             hash_tag = self._get_hash_tag_from_key(key)
             if hash_tag is not None:

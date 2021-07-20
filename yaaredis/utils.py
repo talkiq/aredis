@@ -21,18 +21,6 @@ def nativestr(x):
     return x if isinstance(x, str) else x.decode('utf-8', 'replace')
 
 
-def iteritems(x):
-    return iter(x.items())
-
-
-def iterkeys(x):
-    return iter(x.keys())
-
-
-def itervalues(x):
-    return iter(x.values())
-
-
 class dummy:
     """
     Instances of this class can be used as an attribute container.

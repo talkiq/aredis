@@ -2,7 +2,6 @@ from ..exceptions import DataError
 from ..utils import b
 from ..utils import dict_merge
 from ..utils import first_key
-from ..utils import iteritems
 from ..utils import list_or_args
 from ..utils import pairs_to_dict
 from ..utils import string_keys_to_dict
@@ -84,7 +83,7 @@ class HashCommandMixin:
         if not mapping:
             raise DataError("'hmset' with 'mapping' of length 0")
         items = []
-        for pair in iteritems(mapping):
+        for pair in iter(mapping.items()):
             items.extend(pair)
         return await self.execute_command('HMSET', name, *items)
 

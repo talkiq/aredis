@@ -11,9 +11,6 @@ from yaaredis.exceptions import RedisClusterException
 from yaaredis.exceptions import RedisError
 from yaaredis.exceptions import ResponseError
 from yaaredis.utils import b
-from yaaredis.utils import iteritems
-from yaaredis.utils import iterkeys
-from yaaredis.utils import itervalues
 
 
 pytestmark = skip_if_server_version_lt('2.9.0')
@@ -437,7 +434,7 @@ async def test_mset(r):
     await r.flushdb()
     d = {'a': b('1'), 'b': b('2'), 'c': b('3')}
     assert await r.mset(d)
-    for k, v in iteritems(d):
+    for k, v in iter(d.items()):
         assert await r.mget(k) == [v]
 
 
@@ -446,7 +443,7 @@ async def test_mset_hash_tags(r):
     await r.flushdb()
     d = {'a{foo}': b('1'), 'b{foo}': b('2'), 'c{bar}': b('3')}
     assert await r.mset(d)
-    for k, v in iteritems(d):
+    for k, v in iter(d.items()):
         assert await r.mget(k) == [v]
 
 
@@ -455,7 +452,7 @@ async def test_mset_kwargs(r):
     await r.flushdb()
     d = {'a': b('1'), 'b': b('2'), 'c': b('3')}
     assert await r.mset(**d)
-    for k, v in iteritems(d):
+    for k, v in iter(d.items()):
         assert await r.get(k) == v
 
 
@@ -466,7 +463,7 @@ async def test_msetnx(r):
     assert await r.msetnx(d)
     d2 = {'a': b('x'), 'd': b('4')}
     assert not await r.msetnx(d2)
-    for k, v in iteritems(d):
+    for k, v in iter(d.items()):
         assert await r.get(k) == v
     assert await r.get('d') is None
 
@@ -478,7 +475,7 @@ async def test_msetnx_kwargs(r):
     assert await r.msetnx(**d)
     d2 = {'a': b('x'), 'd': b('4')}
     assert not await r.msetnx(**d2)
-    for k, v in iteritems(d):
+    for k, v in iter(d.items()):
         assert await r.get(k) == v
     assert await r.get('d') is None
 
@@ -1522,7 +1519,7 @@ async def test_hkeys(r):
     await r.flushdb()
     h = {b('a1'): b('1'), b('a2'): b('2'), b('a3'): b('3')}
     await r.hmset('a', h)
-    local_keys = list(iterkeys(h))
+    local_keys = list(iter(h.keys()))
     remote_keys = await r.hkeys('a')
     assert sorted(local_keys) == sorted(remote_keys)
 
@@ -1564,7 +1561,7 @@ async def test_hvals(r):
     await r.flushdb()
     h = {b('a1'): b('1'), b('a2'): b('2'), b('a3'): b('3')}
     await r.hmset('a', h)
-    local_vals = list(itervalues(h))
+    local_vals = list(iter(h.values()))
     remote_vals = await r.hvals('a')
     assert sorted(local_vals) == sorted(remote_vals)
 

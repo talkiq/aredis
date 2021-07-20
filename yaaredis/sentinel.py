@@ -9,7 +9,6 @@ from .exceptions import ReadOnlyError
 from .exceptions import ResponseError
 from .exceptions import TimeoutError  # pylint: disable=redefined-builtin
 from .pool import ConnectionPool
-from .utils import iteritems
 from .utils import nativestr
 
 
@@ -181,7 +180,7 @@ class Sentinel:
         # if sentinel_kwargs isn't defined, use the socket_* options from
         # connection_kwargs
         if sentinel_kwargs is None:
-            sentinel_kwargs = {k: v for k, v in iteritems(connection_kwargs)
+            sentinel_kwargs = {k: v for k, v in iter(connection_kwargs.items())
                                if k.startswith('socket_')}
         self.sentinel_kwargs = sentinel_kwargs
 

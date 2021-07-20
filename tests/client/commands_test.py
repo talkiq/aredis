@@ -13,9 +13,6 @@ from yaaredis.exceptions import DataError
 from yaaredis.exceptions import RedisError
 from yaaredis.exceptions import ResponseError
 from yaaredis.utils import b
-from yaaredis.utils import iteritems
-from yaaredis.utils import iterkeys
-from yaaredis.utils import itervalues
 
 
 async def redis_server_time(client):
@@ -551,14 +548,14 @@ class TestRedisCommands:
     async def test_mset(self, r):
         d = {'a': b('1'), 'b': b('2'), 'c': b('3')}
         assert await r.mset(d)
-        for k, v in iteritems(d):
+        for k, v in iter(d.items()):
             assert await r.get(k) == v
 
     @pytest.mark.asyncio(forbid_global_loop=True)
     async def test_mset_kwargs(self, r):
         d = {'a': b('1'), 'b': b('2'), 'c': b('3')}
         assert await r.mset(**d)
-        for k, v in iteritems(d):
+        for k, v in iter(d.items()):
             assert await r.get(k) == v
 
     @pytest.mark.asyncio(forbid_global_loop=True)
@@ -568,7 +565,7 @@ class TestRedisCommands:
         assert await r.msetnx(d)
         d2 = {'a': b('x'), 'd': b('4')}
         assert not await r.msetnx(d2)
-        for k, v in iteritems(d):
+        for k, v in iter(d.items()):
             assert await r.get(k) == v
         assert await r.get('d') is None
 
@@ -579,7 +576,7 @@ class TestRedisCommands:
         assert await r.msetnx(**d)
         d2 = {'a': b('x'), 'd': b('4')}
         assert not await r.msetnx(**d2)
-        for k, v in iteritems(d):
+        for k, v in iter(d.items()):
             assert await r.get(k) == v
         assert await r.get('d') is None
 
@@ -1598,7 +1595,7 @@ class TestRedisCommands:
         await r.flushdb()
         h = {b('a1'): b('1'), b('a2'): b('2'), b('a3'): b('3')}
         await r.hmset('a', h)
-        local_keys = list(iterkeys(h))
+        local_keys = list(iter(h.keys()))
         remote_keys = await r.hkeys('a')
         assert sorted(local_keys) == sorted(remote_keys)
 
@@ -1635,7 +1632,7 @@ class TestRedisCommands:
         await r.flushdb()
         h = {b('a1'): b('1'), b('a2'): b('2'), b('a3'): b('3')}
         await r.hmset('a', h)
-        local_vals = list(itervalues(h))
+        local_vals = list(iter(h.values()))
         remote_vals = await r.hvals('a')
         assert sorted(local_vals) == sorted(remote_vals)
 
@@ -2036,14 +2033,14 @@ class TestBinarySave:
             b('foo\tbar\x07'): [b('7'), b('8'), b('9')],
         }
         # fill in lists
-        for key, value in iteritems(mapping):
+        for key, value in iter(mapping.items()):
             await r.rpush(key, *value)
 
         # check that KEYS returns all the keys as they are
-        assert sorted(await r.keys('*')) == sorted(iterkeys(mapping))
+        assert sorted(await r.keys('*')) == sorted(iter(mapping.keys()))
 
         # check that it is possible to get list content by key name
-        for key, value in iteritems(mapping):
+        for key, value in iter(mapping.items()):
             assert await r.lrange(key, 0, -1) == value
 
     @pytest.mark.asyncio(forbid_global_loop=True)
