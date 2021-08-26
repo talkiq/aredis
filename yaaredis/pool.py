@@ -3,6 +3,7 @@ import os
 import random
 import threading
 import time
+from collections import defaultdict
 from itertools import chain
 from urllib.parse import parse_qs
 from urllib.parse import unquote
@@ -503,7 +504,7 @@ class ClusterConnectionPool(ConnectionPool):
         channel = options.pop('channel', None)
 
         if not channel:
-            return self.get_random_connection()
+            return await self.get_random_connection()
 
         slot = self.nodes.keyslot(channel)
         node = self.get_master_node_by_slot(slot)
@@ -588,7 +589,7 @@ class ClusterConnectionPool(ConnectionPool):
 
         return sum(self._created_connections_per_node.values())
 
-    def get_random_connection(self):
+    async def get_random_connection(self):
         """Opens new connection to random redis server"""
         if self._available_connections:
             node_name = random.choice(list(self._available_connections.keys()))
@@ -597,21 +598,21 @@ class ClusterConnectionPool(ConnectionPool):
             if conn_list:
                 return conn_list.pop()
         for node in self.nodes.random_startup_node_iter():
-            connection = self.get_connection_by_node(node)
+            connection = await self.get_connection_by_node(node)
 
             if connection:
                 return connection
 
         raise Exception('Cant reach a single startup node.')
 
-    def get_connection_by_key(self, key):
+    async def get_connection_by_key(self, key):
         if not key:
             raise RedisClusterException(
                 'No way to dispatch this command to Redis Cluster.')
 
-        return self.get_connection_by_slot(self.nodes.keyslot(key))
+        return await self.get_connection_by_slot(self.nodes.keyslot(key))
 
-    def get_connection_by_slot(self, slot):
+    async def get_connection_by_slot(self, slot):
         """
         Determines what server a specific slot belongs to and return a redis
         object that is connected
@@ -619,11 +620,11 @@ class ClusterConnectionPool(ConnectionPool):
         self._checkpid()
 
         try:
-            return self.get_connection_by_node(self.get_node_by_slot(slot))
+            return await self.get_connection_by_node(self.get_node_by_slot(slot))
         except KeyError:
-            return self.get_random_connection()
+            return await self.get_random_connection()
 
-    def get_connection_by_node(self, node):
+    async def get_connection_by_node(self, node):
         """Gets a connection by node"""
         self._checkpid()
         self.nodes.set_node_name(node)
@@ -637,6 +638,238 @@ class ClusterConnectionPool(ConnectionPool):
 
         self._in_use_connections.setdefault(
             node['name'], set()).add(connection)
+
+        return connection
+
+    def get_master_node_by_slot(self, slot):
+        return self.nodes.slots[slot][0]
+
+    def get_node_by_slot(self, slot):
+        if self.readonly:
+            return random.choice(self.nodes.slots[slot])
+        return self.get_master_node_by_slot(slot)
+
+
+class BlockingClusterConnectionPool(ConnectionPool):
+    # pylint: disable=too-many-instance-attributes
+    def __init__(self, startup_nodes=None, connection_class=ClusterConnection,
+                 max_connections=None, max_connections_per_node=False, reinitialize_steps=None,
+                 skip_full_coverage_check=False, nodemanager_follow_cluster=False, readonly=False,
+                 max_idle_time=0, idle_check_interval=1,
+                 **connection_kwargs):
+        """
+        :skip_full_coverage_check:
+            Skips the check of cluster-require-full-coverage config, useful for clusters
+            without the CONFIG command (like aws)
+        :nodemanager_follow_cluster:
+            The node manager will during initialization try the last set of nodes that
+            it was operating on. This will allow the client to drift along side the cluster
+            if the cluster nodes move around alot.
+        """
+        super().__init__(
+            connection_class=connection_class, max_connections=max_connections)
+
+        assert max_idle_time == 0, 'Max idle time not support for blocking version'
+        assert max_connections_per_node, 'Only per node connection limit is supported'
+
+        # Special case to make from_url method compliant with cluster setting.
+        # from_url method will send in the ip and port through a different variable then the
+        # regular startup_nodes variable.
+        if startup_nodes is None:
+            if 'port' in connection_kwargs and 'host' in connection_kwargs:
+                startup_nodes = [{
+                    'host': connection_kwargs.pop('host'),
+                    'port': str(connection_kwargs.pop('port')),
+                }]
+
+        self.max_connections = max_connections or 2 ** 31
+        self.nodes = NodeManager(
+            startup_nodes,
+            reinitialize_steps=reinitialize_steps,
+            skip_full_coverage_check=skip_full_coverage_check,
+            max_connections=self.max_connections,
+            nodemanager_follow_cluster=nodemanager_follow_cluster,
+            **connection_kwargs,
+        )
+        self.initialized = False
+
+        self.connections = {}
+        self.connection_kwargs = connection_kwargs
+        self.connection_kwargs['readonly'] = readonly
+        self.readonly = readonly
+        self.max_idle_time = max_idle_time
+        self.idle_check_interval = idle_check_interval
+        self.reset()
+
+        if 'stream_timeout' not in self.connection_kwargs:
+            self.connection_kwargs['stream_timeout'] = ClusterConnectionPool.RedisClusterDefaultTimeout
+
+    def __repr__(self):
+        """
+        Returns a string with all unique ip:port combinations that this pool
+        is connected to
+        """
+        return '{}<{}>'.format(
+            type(self).__name__,
+            ', '.join([self.connection_class.description.format(**node)
+                       for node in self.nodes.startup_nodes]),
+        )
+
+    async def initialize(self):
+        if not self.initialized:
+            await self.nodes.initialize()
+            self.initialized = True
+
+    def _make_connection_queue(self):
+        res = asyncio.LifoQueue(maxsize=self.max_connections)
+        for _ in range(self.max_connections):
+            res.put_nowait(None)
+        return res
+
+    def reset(self):
+        """Resets the connection pool back to a clean state"""
+        self.pid = os.getpid()
+        self._available_connections = defaultdict(self._make_connection_queue)
+        self._in_use_connections = defaultdict(set)
+        self._check_lock = threading.Lock()
+        self.initialized = False
+
+    def _checkpid(self):
+        if self.pid != os.getpid():
+            with self._check_lock:
+                if self.pid == os.getpid():
+                    # another thread already did the work while we waited
+                    # on the lockself.
+                    return
+                self.disconnect()
+                self.reset()
+
+    async def get_connection(self, command_name, *keys, **options):
+        # Only pubsub command/connection should be allowed here
+        if command_name != 'pubsub':
+            raise RedisClusterException(
+                "Only 'pubsub' commands can use get_connection()")
+
+        channel = options.pop('channel', None)
+
+        if not channel:
+            return await self.get_random_connection()
+
+        slot = self.nodes.keyslot(channel)
+        node = self.get_master_node_by_slot(slot)
+
+        self._checkpid()
+
+        return await self.get_connection_by_node(node)
+
+    def make_connection(self, node):
+        """Creates a new connection"""
+
+        connection = self.connection_class(host=node['host'],
+                                           port=node['port'],
+                                           **self.connection_kwargs)
+
+        # Must store node in the connection to make it eaiser to track
+        connection.node = node
+        return connection
+
+    def release(self, connection):
+        """Releases the connection back to the pool"""
+        self._checkpid()
+        if connection.pid != self.pid:
+            return
+
+        node_name = connection.node['name']
+        self._in_use_connections[node_name].remove(connection)
+        # discard connection with unread response
+        if connection.awaiting_response:
+            connection.disconnect()
+            connection = None
+
+        try:
+            self._available_connections[node_name].put_nowait(connection)
+        except asyncio.QueueFull:
+            # perhaps the pool have been reset() ?
+            pass
+
+    def disconnect(self):
+        """Closes all connections in the pool"""
+        for queue in self._available_connections.values():
+            available_connections = []
+            while True:
+                try:
+                    connection = queue.get_nowait()
+                except asyncio.QueueEmpty:
+                    break
+                connection.disconnect()
+                available_connections.append(connection)
+
+            for connection in available_connections:
+                try:
+                    queue.put_nowait(connection)
+                except asyncio.QueueFull:
+                    pass
+
+        for node_connections in self._in_use_connections.values():
+            for connection in node_connections:
+                connection.disconnect()
+
+    async def get_random_connection(self):
+        """Opens new connection to random redis server"""
+        considered_nodes = list(self._available_connections.keys())
+        random.shuffle(considered_nodes)
+        for node_name in considered_nodes:
+            try:
+                connection = self._available_connections[node_name].get_nowait(
+                )
+                if connection is None:
+                    self._available_connections[node_name].put_nowait(
+                        connection)
+                else:
+                    self._in_use_connections[node_name].add(connection)
+                    return connection
+            except asyncio.QueueEmpty:
+                pass
+
+        # This should only happen if no connection was created yet
+        for node in self.nodes.random_startup_node_iter():
+            connection = await self.get_connection_by_node(node)
+
+            if connection:
+                return connection
+
+        raise Exception('Cant reach a single startup node.')
+
+    async def get_connection_by_key(self, key):
+        if not key:
+            raise RedisClusterException(
+                'No way to dispatch this command to Redis Cluster.')
+
+        return await self.get_connection_by_slot(self.nodes.keyslot(key))
+
+    async def get_connection_by_slot(self, slot):
+        """
+        Determines what server a specific slot belongs to and return a redis
+        object that is connected
+        """
+        self._checkpid()
+
+        try:
+            return await self.get_connection_by_node(self.get_node_by_slot(slot))
+        except KeyError:
+            return await self.get_random_connection()
+
+    async def get_connection_by_node(self, node):
+        """Gets a connection by node"""
+        self._checkpid()
+        self.nodes.set_node_name(node)
+
+        # Try to get connection from existing pool
+        connection = await self._available_connections[node['name']].get()
+        if connection is None:
+            connection = self.make_connection(node)
+
+        self._in_use_connections[node['name']].add(connection)
 
         return connection
 

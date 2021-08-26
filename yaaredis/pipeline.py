@@ -461,7 +461,7 @@ class StrictClusterPipeline(StrictRedisCluster):
                     raise ClusterTransactionError(
                         "Keys in request don't hash to the same node")
             node = hashed_node
-        conn = self.connection_pool.get_connection_by_node(node)
+        conn = await self.connection_pool.get_connection_by_node(node)
         if self.watches:
             await self._watch(node, conn, self.watches)
         node_commands = NodeCommands(
@@ -521,7 +521,7 @@ class StrictClusterPipeline(StrictRedisCluster):
             node_name = node['name']
             if node_name not in nodes:
                 nodes[node_name] = NodeCommands(
-                    self.parse_response, self.connection_pool.get_connection_by_node(node))
+                    self.parse_response, await self.connection_pool.get_connection_by_node(node))
 
             nodes[node_name].append(c)
 

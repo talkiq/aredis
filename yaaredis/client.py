@@ -443,9 +443,9 @@ class StrictRedisCluster(StrictRedis, *cluster_mixins):
 
             if asking:
                 node = self.connection_pool.nodes.nodes[redirect_addr]
-                r = self.connection_pool.get_connection_by_node(node)
+                r = await self.connection_pool.get_connection_by_node(node)
             elif try_random_node:
-                r = self.connection_pool.get_random_connection()
+                r = await self.connection_pool.get_random_connection()
                 try_random_node = False
             else:
                 if self.moved:
@@ -453,7 +453,7 @@ class StrictRedisCluster(StrictRedis, *cluster_mixins):
                     node = self.connection_pool.get_master_node_by_slot(slot)
                 else:
                     node = self.connection_pool.get_node_by_slot(slot)
-                r = self.connection_pool.get_connection_by_node(node)
+                r = await self.connection_pool.get_connection_by_node(node)
 
             try:
                 if asking:
@@ -502,7 +502,7 @@ class StrictRedisCluster(StrictRedis, *cluster_mixins):
         res = {}
 
         for node in nodes:
-            connection = self.connection_pool.get_connection_by_node(node)
+            connection = await self.connection_pool.get_connection_by_node(node)
 
             # copy from redis-py
             try:

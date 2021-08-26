@@ -1,7 +1,7 @@
 # pylint: disable=protected-access
 import asyncio
 import os
-from unittest.mock import Mock
+import sys
 from unittest.mock import patch
 
 import pytest
@@ -53,7 +53,7 @@ async def test_in_use_not_exists():
 async def test_connection_creation():
     connection_kwargs = {'foo': 'bar', 'biz': 'baz'}
     pool = await get_pool(connection_kwargs=connection_kwargs)
-    connection = pool.get_connection_by_node(
+    connection = await pool.get_connection_by_node(
         {'host': '127.0.0.1', 'port': 7000})
     assert isinstance(connection, SampleConnection)
     for key in connection_kwargs:
@@ -63,29 +63,29 @@ async def test_connection_creation():
 @pytest.mark.asyncio()
 async def test_multiple_connections():
     pool = await get_pool()
-    c1 = pool.get_connection_by_node({'host': '127.0.0.1', 'port': 7000})
-    c2 = pool.get_connection_by_node({'host': '127.0.0.1', 'port': 7001})
+    c1 = await pool.get_connection_by_node({'host': '127.0.0.1', 'port': 7000})
+    c2 = await pool.get_connection_by_node({'host': '127.0.0.1', 'port': 7001})
     assert c1 != c2
 
 
 @pytest.mark.asyncio()
 async def test_max_connections():
     pool = await get_pool(max_connections=2)
-    pool.get_connection_by_node({'host': '127.0.0.1', 'port': 7000})
-    pool.get_connection_by_node({'host': '127.0.0.1', 'port': 7001})
+    await pool.get_connection_by_node({'host': '127.0.0.1', 'port': 7000})
+    await pool.get_connection_by_node({'host': '127.0.0.1', 'port': 7001})
     with pytest.raises(RedisClusterException):
-        pool.get_connection_by_node({'host': '127.0.0.1', 'port': 7000})
+        await pool.get_connection_by_node({'host': '127.0.0.1', 'port': 7000})
 
 
 @pytest.mark.asyncio()
 async def test_max_connections_per_node():
     pool = await get_pool(max_connections=2, max_connections_per_node=True)
-    pool.get_connection_by_node({'host': '127.0.0.1', 'port': 7000})
-    pool.get_connection_by_node({'host': '127.0.0.1', 'port': 7001})
-    pool.get_connection_by_node({'host': '127.0.0.1', 'port': 7000})
-    pool.get_connection_by_node({'host': '127.0.0.1', 'port': 7001})
+    await pool.get_connection_by_node({'host': '127.0.0.1', 'port': 7000})
+    await pool.get_connection_by_node({'host': '127.0.0.1', 'port': 7001})
+    await pool.get_connection_by_node({'host': '127.0.0.1', 'port': 7000})
+    await pool.get_connection_by_node({'host': '127.0.0.1', 'port': 7001})
     with pytest.raises(RedisClusterException):
-        pool.get_connection_by_node({'host': '127.0.0.1', 'port': 7000})
+        await pool.get_connection_by_node({'host': '127.0.0.1', 'port': 7000})
 
 
 @pytest.mark.asyncio()
@@ -97,9 +97,9 @@ async def test_max_connections_default_setting():
 @pytest.mark.asyncio()
 async def test_reuse_previously_released_connection():
     pool = await get_pool()
-    c1 = pool.get_connection_by_node({'host': '127.0.0.1', 'port': 7000})
+    c1 = await pool.get_connection_by_node({'host': '127.0.0.1', 'port': 7000})
     pool.release(c1)
-    c2 = pool.get_connection_by_node({'host': '127.0.0.1', 'port': 7000})
+    c2 = await pool.get_connection_by_node({'host': '127.0.0.1', 'port': 7000})
     assert c1 == c2
 
 
@@ -126,18 +126,21 @@ async def test_get_connection_by_key():
 
     # Patch the call that is made inside the method to allow control of the
     # returned connection object
-    with patch.object(ClusterConnectionPool, 'get_connection_by_slot',
-                      autospec=True) as pool_mock:
-        def side_effect(*_args, **_kwargs):
+
+    if tuple(sys.version_info)[:2] <= (3, 7):
+        async def make_connection(*_args, **_kwargs):
             return SampleConnection(port=1337)
+        ret = make_connection()
+    else:
+        ret = SampleConnection(port=1337)
 
-        pool_mock.side_effect = side_effect
-
-        connection = pool.get_connection_by_key('foo')
+    with patch.object(ClusterConnectionPool, 'get_connection_by_slot',
+                      autospec=True, return_value=ret):
+        connection = await pool.get_connection_by_key('foo')
         assert connection.port == 1337
 
     with pytest.raises(RedisClusterException) as ex:
-        pool.get_connection_by_key(None)
+        await pool.get_connection_by_key(None)
         assert str(ex.value).startswith('No way to dispatch this command to '
                                         'Redis Cluster.')
 
@@ -152,22 +155,27 @@ async def test_get_connection_by_slot():
 
     # Patch the call that is made inside the method to allow control of the
     # returned connection object
-    with patch.object(ClusterConnectionPool, 'get_connection_by_node',
-                      autospec=True) as pool_mock:
-        def side_effect(*_args, **_kwargs):
+    if tuple(sys.version_info)[:2] <= (3, 7):
+        async def make_connection(*_args, **_kwargs):
             return SampleConnection(port=1337)
+        ret = make_connection()
+    else:
+        ret = SampleConnection(port=1337)
 
-        pool_mock.side_effect = side_effect
+    with patch.object(ClusterConnectionPool, 'get_connection_by_node',
+                      autospec=True, return_value=ret):
 
-        connection = pool.get_connection_by_slot(12182)
+        connection = await pool.get_connection_by_slot(12182)
         assert connection.port == 1337
 
-    m = Mock()
-    pool.get_random_connection = m
+    async def rnd_make_connection(*_args, **_kwargs):
+        return SampleConnection(port=123)
+
+    pool.get_random_connection = rnd_make_connection
 
     # If None value is provided then a random node should be tried/returned
-    pool.get_connection_by_slot(None)
-    m.assert_called_once_with()
+    res = await pool.get_connection_by_slot(None)
+    assert res.port == 123
 
 
 @pytest.mark.asyncio()
@@ -198,7 +206,7 @@ async def test_connection_idle_check():
     pool = ClusterConnectionPool(
         startup_nodes=[{'host': '127.0.0.1', 'port': 7000}], max_idle_time=0.2,
         idle_check_interval=0.1)
-    conn = pool.get_connection_by_node({
+    conn = await pool.get_connection_by_node({
         'name': '127.0.0.1:7000',
         'host': '127.0.0.1',
         'port': 7000,

@@ -34,10 +34,10 @@ async def test_repr_contains_db_info_readonly():
 @pytest.mark.asyncio()
 async def test_max_connections():
     pool = await get_pool(max_connections=2)
-    pool.get_connection_by_node({'host': '127.0.0.1', 'port': 7000})
-    pool.get_connection_by_node({'host': '127.0.0.1', 'port': 7001})
+    await pool.get_connection_by_node({'host': '127.0.0.1', 'port': 7000})
+    await pool.get_connection_by_node({'host': '127.0.0.1', 'port': 7001})
     with pytest.raises(RedisClusterException):
-        pool.get_connection_by_node({'host': '127.0.0.1', 'port': 7000})
+        await pool.get_connection_by_node({'host': '127.0.0.1', 'port': 7000})
 
 
 @pytest.mark.asyncio()
