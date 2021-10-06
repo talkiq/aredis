@@ -51,7 +51,7 @@ def make_subscribe_test_data(pubsub, kind):
             'unsub_func': pubsub.punsubscribe,
             'keys': ['f*', 'b*', 'uni' + chr(4456) + '*'],
         }
-    assert False, 'invalid subscribe type: {}'.format(type)
+    assert False, f'invalid subscribe type: {type}'
 
 
 class TestPubSubSubscribeUnsubscribe:

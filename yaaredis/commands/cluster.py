@@ -311,7 +311,7 @@ class ClusterCommandMixin:
             return await self.execute_command('CLUSTER SETSLOT', slot_id, state, node_id)
         if state.upper() == 'STABLE':
             return await self.execute_command('CLUSTER SETSLOT', slot_id, 'STABLE')
-        raise RedisError('Invalid slot state: {}'.format(state))
+        raise RedisError(f'Invalid slot state: {state}')
 
     async def cluster_get_keys_in_slot(self, slot_id, count):
         """

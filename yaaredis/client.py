@@ -171,7 +171,7 @@ class StrictRedis(*mixins):
         self.response_callbacks = self.__class__.RESPONSE_CALLBACKS.copy()
 
     def __repr__(self):
-        return '{}<{}>'.format(type(self).__name__, repr(self.connection_pool))
+        return f'{type(self).__name__}<{repr(self.connection_pool)}>'
 
     def set_response_callback(self, command, callback):
         """Sets a custom Response Callback"""
@@ -350,7 +350,7 @@ class StrictRedisCluster(StrictRedis, *cluster_mixins):
             slots = {self.connection_pool.nodes.keyslot(key) for key in keys}
             if len(slots) != 1:
                 raise RedisClusterException(
-                    '{} - all keys must map to the same key slot'.format(command))
+                    f'{command} - all keys must map to the same key slot')
             return slots.pop()
 
         if command in ('XREAD', 'XREADGROUP'):
@@ -491,7 +491,7 @@ class StrictRedisCluster(StrictRedis, *cluster_mixins):
                 if ttl < self.RedisClusterRequestTTL / 2:
                     await asyncio.sleep(0.05)
             except AskError as e:
-                redirect_addr, asking = '{}:{}'.format(e.host, e.port), True
+                redirect_addr, asking = f'{e.host}:{e.port}', True
             finally:
                 self.connection_pool.release(r)
 

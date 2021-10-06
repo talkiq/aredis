@@ -63,7 +63,7 @@ class Compressor:
             content = b(repr(content))
         if not isinstance(content, bytes):
             raise TypeError(
-                'Wrong data type({}) to compress'.format(type(content)))
+                f'Wrong data type({type(content)}) to compress')
         return content
 
     def compress(self, content):
@@ -97,7 +97,7 @@ class Serializer:
             content = content.decode(self.encoding)
         if not isinstance(content, str):
             raise TypeError(
-                'Wrong data type({}) to compress'.format(type(content)))
+                f'Wrong data type({type(content)}) to compress')
         return content
 
     @staticmethod
@@ -132,7 +132,7 @@ class BasicCache:
             self.serializer = serializer_class(encoding)
 
     def __repr__(self):
-        return '{}<{}>'.format(type(self).__name__, repr(self.client))
+        return f'{type(self).__name__}<{repr(self.client)}>'
 
     def _gen_identity(self, key, param=None):
         """generate identity according to key and param given"""

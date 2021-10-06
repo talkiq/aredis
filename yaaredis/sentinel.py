@@ -9,7 +9,6 @@ from .exceptions import ReadOnlyError
 from .exceptions import ResponseError
 from .exceptions import TimeoutError  # pylint: disable=redefined-builtin
 from .pool import ConnectionPool
-from .utils import iteritems
 from .utils import nativestr
 
 
@@ -29,7 +28,7 @@ class SentinelManagedConnection(Connection):
     def __repr__(self):
         pool = self.connection_pool
         if self.host:
-            host_info = ',host={},port={}'.format(self.host, self.port)
+            host_info = f',host={self.host},port={self.port}'
         else:
             host_info = ''
         s = '{}<service={}{}>'.format(
@@ -181,7 +180,7 @@ class Sentinel:
         # if sentinel_kwargs isn't defined, use the socket_* options from
         # connection_kwargs
         if sentinel_kwargs is None:
-            sentinel_kwargs = {k: v for k, v in iteritems(connection_kwargs)
+            sentinel_kwargs = {k: v for k, v in iter(connection_kwargs.items())
                                if k.startswith('socket_')}
         self.sentinel_kwargs = sentinel_kwargs
 
@@ -229,7 +228,7 @@ class Sentinel:
                     sentinel, self.sentinels[0])
                 return state['ip'], state['port']
         raise MasterNotFoundError(
-            'No master found for {!r}'.format(service_name))
+            f'No master found for {service_name!r}')
 
     @staticmethod
     def filter_slaves(slaves):

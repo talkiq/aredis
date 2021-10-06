@@ -1,4 +1,3 @@
-import sys
 from functools import wraps
 
 from .exceptions import ClusterDownError
@@ -13,8 +12,6 @@ try:
 except Exception:
     pass
 
-LOOP_DEPRECATED = sys.version_info >= (3, 8)
-
 
 def b(x):
     return x.encode('latin-1') if not isinstance(x, bytes) else x
@@ -22,36 +19,6 @@ def b(x):
 
 def nativestr(x):
     return x if isinstance(x, str) else x.decode('utf-8', 'replace')
-
-
-def iteritems(x):
-    return iter(x.items())
-
-
-def iterkeys(x):
-    return iter(x.keys())
-
-
-def itervalues(x):
-    return iter(x.values())
-
-
-def ban_python_version_lt(min_version):
-    min_version = tuple(map(int, min_version.split('.')))
-
-    def decorator(func):
-        @wraps(func)
-        def _inner(*args, **kwargs):
-            if sys.version_info[:2] < min_version:
-                raise OSError(
-                    '{} not supported in Python version less than {}'
-                    .format(func.__name__, min_version),
-                )
-            return func(*args, **kwargs)
-
-        return _inner
-
-    return decorator
 
 
 class dummy:
@@ -156,7 +123,7 @@ def blocked_command(self, command):
     Raises a `RedisClusterException` mentioning the command is blocked.
     """
     raise RedisClusterException(
-        'Command: {} is blocked in redis cluster mode'.format(command))
+        f'Command: {command} is blocked in redis cluster mode')
 
 
 def clusterdown_wrapper(func):

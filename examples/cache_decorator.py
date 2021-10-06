@@ -12,7 +12,7 @@ def cached(cache):
             key = func.__name__
             res = await cache.get(key, (args, kwargs))
             if res:
-                print('using cache: {}'.format(res))
+                print(f'using cache: {res}')
             else:
                 print('cache miss')
                 res = func(*args, **kwargs)
@@ -27,7 +27,7 @@ CACHE = yaaredis.StrictRedis().cache('example_cache')
 
 @cached(cache=CACHE)
 def job(*args, **kwargs):
-    return 'example_results for job({}, {})'.format(args, kwargs)
+    return f'example_results for job({args}, {kwargs})'
 
 
 if __name__ == '__main__':

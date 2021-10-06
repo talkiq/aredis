@@ -264,7 +264,7 @@ class ClusterListsCommandMixin(ListsCommandMixin):
                 data = await self.lrange(name, 0, -1)
             else:
                 raise RedisClusterException(
-                    'Unable to sort data type : {}'.format(data_type))
+                    f'Unable to sort data type : {data_type}')
 
             if by is not None:
                 # _sort_using_by_arg mutates data so we don't
@@ -291,7 +291,7 @@ class ClusterListsCommandMixin(ListsCommandMixin):
                     await self.rpush(store, *data)
                 else:
                     raise RedisClusterException(
-                        'Unable to store sorted data for data type : {}'.format(data_type))
+                        f'Unable to store sorted data for data type : {data_type}')
 
                 return len(data)
 

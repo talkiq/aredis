@@ -4,9 +4,6 @@ from ..utils import b
 from ..utils import dict_merge
 from ..utils import first_key
 from ..utils import int_or_none
-from ..utils import iteritems
-from ..utils import iterkeys
-from ..utils import itervalues
 from ..utils import string_keys_to_dict
 
 VALID_ZADD_OPTIONS = {'NX', 'XX', 'CH', 'INCR'}
@@ -75,7 +72,7 @@ class SortedSetCommandMixin:
                 raise RedisError('ZADD requires an equal number of '
                                  'values and scores')
             pieces.extend(args)
-        for pair in iteritems(kwargs):
+        for pair in iter(kwargs.items()):
             pieces.append(pair[1])
             pieces.append(pair[0])
         return await self.execute_command('ZADD', name, *pieces)
@@ -106,7 +103,7 @@ class SortedSetCommandMixin:
                 raise RedisError('ZADD requires an equal number of '
                                  'values and scores')
             members.extend(args)
-        for pair in iteritems(kwargs):
+        for pair in iter(kwargs.items()):
             members.append(pair[1])
             members.append(pair[0])
         if 'INCR' in options and len(members) != 2:
@@ -340,7 +337,7 @@ class SortedSetCommandMixin:
     async def _zaggregate(self, command, dest, keys, aggregate=None):
         pieces = [command, dest, len(keys)]
         if isinstance(keys, dict):
-            keys, weights = iterkeys(keys), itervalues(keys)
+            keys, weights = iter(keys.keys()), iter(keys.values())
         else:
             weights = None
         pieces.extend(keys)

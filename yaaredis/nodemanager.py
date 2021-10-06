@@ -243,7 +243,7 @@ class NodeManager:
 
     def set_node(self, host, port, server_type=None):
         """Updates data for a node"""
-        node_name = '{}:{}'.format(host, port)
+        node_name = f'{host}:{port}'
         node = {
             'host': host,
             'port': port,

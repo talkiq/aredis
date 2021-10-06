@@ -26,7 +26,6 @@ from yaaredis.exceptions import ResponseError
 from yaaredis.exceptions import TimeoutError  # pylint: disable=redefined-builtin
 from yaaredis.exceptions import TryAgainError
 from yaaredis.utils import b
-from yaaredis.utils import LOOP_DEPRECATED
 from yaaredis.utils import nativestr
 
 try:
@@ -46,11 +45,9 @@ SYM_EMPTY = b('')
 logger = logging.getLogger(__name__)
 
 
-async def exec_with_timeout(coroutine, timeout, *, loop=None):
+async def exec_with_timeout(coroutine, timeout):
     try:
-        if LOOP_DEPRECATED:
-            return await asyncio.wait_for(coroutine, timeout)
-        return await asyncio.wait_for(coroutine, timeout, loop=loop)  # pylint: disable=deprecated-argument
+        return await asyncio.wait_for(coroutine, timeout)
     except asyncio.TimeoutError as exc:
         raise TimeoutError(exc) from exc
 
@@ -479,7 +476,7 @@ class BaseConnection:
 
     async def read_response(self):
         try:
-            response = await exec_with_timeout(self._parser.read_response(), self._stream_timeout, loop=self.loop)
+            response = await exec_with_timeout(self._parser.read_response(), self._stream_timeout)
             self.last_active_at = time.time()
         except TimeoutError:
             self.disconnect()
@@ -632,10 +629,8 @@ class Connection(BaseConnection):
         reader, writer = await exec_with_timeout(
             asyncio.open_connection(host=self.host,
                                     port=self.port,
-                                    ssl=self.ssl_context,
-                                    loop=self.loop),
+                                    ssl=self.ssl_context),
             self._connect_timeout,
-            loop=self.loop,
         )
         self._reader = reader
         self._writer = writer
@@ -682,10 +677,8 @@ class UnixDomainSocketConnection(BaseConnection):
     async def _connect(self):
         reader, writer = await exec_with_timeout(
             asyncio.open_unix_connection(path=self.path,
-                                         ssl=self.ssl_context,
-                                         loop=self.loop),
+                                         ssl=self.ssl_context),
             self._connect_timeout,
-            loop=self.loop,
         )
         self._reader = reader
         self._writer = writer

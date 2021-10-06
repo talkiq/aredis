@@ -101,7 +101,7 @@ workflows:
             alias: pytest-client
             parameters:
               hiredis: [false, true]
-              python_version: ['3.5', '3.6', '3.7', '3.8', '3.9']
+              python_version: ['3.6', '3.7', '3.8', '3.9', '3.10']
               redis_version: ['3', '4', '5', '6']
           filters:
             tags:
@@ -112,9 +112,9 @@ workflows:
             alias: pytest-cluster
             parameters:
               hiredis: [false, true]
-              python_version: ['3.5', '3.6', '3.7', '3.8', '3.9']
+              python_version: ['3.6', '3.7', '3.8', '3.9', '3.10']
               # TODO: pin to latest builds
-              redis_version: ['3.2.13', '4.0.14', '5.0.5', '6.0.12']
+              redis_version: ['3.2.13', '4.0.14', '5.0.12', '6.2.1']
           filters:
             tags:
               only: /.*/
@@ -122,7 +122,7 @@ workflows:
       - build:
           name: build-sdist
           format: sdist
-          python_version: '3.9'
+          python_version: '3.10'
           filters:
             branches:
               ignore: /.*/
@@ -138,7 +138,7 @@ workflows:
           matrix:
             alias: build-wheel
             parameters:
-              python_version: ['3.5', '3.6', '3.7', '3.8', '3.9']
+              python_version: ['3.6', '3.7', '3.8', '3.9', '3.10']
           filters:
             branches:
               ignore: /.*/
@@ -150,7 +150,7 @@ workflows:
             - pytest-cluster
       - publish:
           context: org-global
-          python_version: '3.9'
+          python_version: '3.10'
           filters:
             branches:
               ignore: /.*/
