@@ -18,7 +18,7 @@ contextvars = { version = ">=1.0.0,<3.0.0", python = "<3.7" }
 hiredis = { version = ">=0.2.0,<3.0.0", optional = true }
 
 [tool.poetry.dev-dependencies]
-pytest = ">=4.0.0,<7.0.0"
+pytest = ">=6.2.5,<7.0.0"
 pytest-asyncio = ">=0.5.0,<1.0.0"
 
 [tool.poetry.extras]
