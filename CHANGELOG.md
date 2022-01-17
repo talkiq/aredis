@@ -1,3 +1,18 @@
+<a name="3.0.0"></a>
+## 3.0.0 (2022-01-17)
+
+#### Features
+
+* **compat:**  add support for python 3.10 (#13) ([dda3b5de](dda3b5de))
+
+#### Bug Fixes
+
+* **pool:**  fix basic query argument types ([30de2852](30de2852))
+
+#### Breaking Changes
+
+* **compat:**  drop support for python 3.5 (#13) ([dda3b5de](dda3b5de))
+
 <a name="2.0.4"></a>
 ## 2.0.4 (2021-07-19)
 
