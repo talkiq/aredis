@@ -63,11 +63,12 @@ repos:
     hooks:
     -   id: remove-crlf
     -   id: remove-tabs
--   repo: https://github.com/asottile/reorder_python_imports
-    rev: v2.5.0
-    hooks:
-    -   id: reorder-python-imports
-        args: [--py36-plus]
+# TODO: fix https://app.circleci.com/pipelines/github/talkiq/yaaredis/120/workflows/b9d7c40a-7ee6-43b3-9f49-1eed559a126b/jobs/7314
+# -   repo: https://github.com/asottile/reorder_python_imports
+#     rev: v2.5.0
+#     hooks:
+#     -   id: reorder-python-imports
+#         args: [--py36-plus]
 -   repo: https://github.com/asottile/pyupgrade
     rev: v2.19.1
     hooks:
