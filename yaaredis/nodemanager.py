@@ -105,9 +105,10 @@ class NodeManager:
         Initializes the slots cache by asking all startup nodes what the
         current cluster configuration is.
 
-        TODO: Currently the last node will have the last say about how the configuration is setup.
-        Maybe it should stop to try after it have correctly covered all slots or when one node is reached
-        and it could execute CLUSTER SLOTS command.
+        TODO: Currently the last node will have the last say about how the
+        configuration is setup. Maybe it should stop to try after it have
+        correctly covered all slots or when one node is reached and it could
+        execute CLUSTER SLOTS command.
         """
         # pylint: disable=too-many-locals,too-many-nested-blocks
         # pylint: disable=too-many-branches,too-many-statements
@@ -135,7 +136,7 @@ class NodeManager:
             except Exception as e:
                 raise RedisClusterException(
                     'ERROR sending "cluster slots" command to redis '
-                    'server: {}'.format(node)) from e
+                    f'server: {node}') from e
 
             all_slots_covered = True
 
@@ -148,7 +149,8 @@ class NodeManager:
                     single_node_slots['host'] = self.startup_nodes[0]['host']
                     single_node_slots['server_type'] = 'master'
 
-            # No need to decode response because StrictRedis should handle that for us...
+            # No need to decode response because StrictRedis should handle that
+            # for us...
             for min_slot, max_slot in cluster_slots:
                 nodes = cluster_slots.get((min_slot, max_slot))
                 master_node, slave_nodes = nodes[0], nodes[1:]
@@ -167,24 +169,28 @@ class NodeManager:
                             nodes_cache[slave_node['name']] = slave_node
                             tmp_slots[i].append(slave_node)
                     else:
-                        # Validate that 2 nodes want to use the same slot cache setup
+                        # Validate that 2 nodes want to use the same slot cache
+                        # setup
                         if tmp_slots[i][0]['name'] != node['name']:
-                            disagreements.append('{} vs {} on slot: {}'.format(
-                                tmp_slots[i][0]['name'], node['name'], i),
-                            )
+                            disagreements.append(
+                                f'{tmp_slots[i][0]["name"]} vs {node["name"]} '
+                                'on slot: {i}')
 
                             if len(disagreements) > 5:
-                                raise RedisClusterException('startup_nodes could not agree on a valid slots cache. {}'
-                                                            .format(', '.join(disagreements)))
+                                raise RedisClusterException(
+                                    'startup_nodes could not agree on a valid '
+                                    f'slots cache. {", ".join(disagreements)}')
 
                 self.populate_startup_nodes()
 
             if self._skip_full_coverage_check:
                 need_full_slots_coverage = False
             else:
-                need_full_slots_coverage = await self.cluster_require_full_coverage(nodes_cache)
+                need_full_slots_coverage = (
+                    await self.cluster_require_full_coverage(nodes_cache))
 
-            # Validate if all slots are covered or if we should try next startup node
+            # Validate if all slots are covered or if we should try next
+            # startup node
             for i in range(0, self.RedisClusterHashSlots):
                 if i not in tmp_slots and need_full_slots_coverage:
                     all_slots_covered = False
@@ -194,12 +200,14 @@ class NodeManager:
                 break
 
         if not startup_nodes_reachable:
-            raise ClusterUnreachableError('Redis Cluster cannot be connected. '
-                                          'Please provide at least one reachable node.')
+            raise ClusterUnreachableError(
+                'Redis Cluster cannot be connected. Please provide at least '
+                'one reachable node.')
 
         if not all_slots_covered:
-            raise RedisClusterException('Not all slots are covered after query all startup_nodes. '
-                                        '{} of {} covered...'.format(len(tmp_slots), self.RedisClusterHashSlots))
+            raise RedisClusterException(
+                'Not all slots are covered after query all startup_nodes. '
+                f'{len(tmp_slots)} of {self.RedisClusterHashSlots} covered...')
 
         # Set the tmp variables to the real variables
         self.slots = tmp_slots
@@ -222,7 +230,8 @@ class NodeManager:
 
         async def node_require_full_coverage(node):
             r_node = self.get_redis_link(host=node['host'], port=node['port'])
-            node_config = await r_node.config_get('cluster-require-full-coverage')
+            node_config = await r_node.config_get(
+                'cluster-require-full-coverage')
             return 'yes' in node_config.values()
 
         # at least one node should have cluster-require-full-coverage yes
@@ -236,10 +245,11 @@ class NodeManager:
         """
         Formats the name for the given node object
 
-        # TODO: This shold not be constructed this way. It should update the name of the node in the node cache dict
+        # TODO: This shold not be constructed this way. It should update the
+        # name of the node in the node cache dict
         """
         if 'name' not in n:
-            n['name'] = '{}:{}'.format(n['host'], n['port'])
+            n['name'] = f'{n["host"]}:{n["port"]}'
 
     def set_node(self, host, port, server_type=None):
         """Updates data for a node"""

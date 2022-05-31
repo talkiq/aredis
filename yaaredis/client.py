@@ -328,10 +328,10 @@ class StrictRedisCluster(StrictRedis, *cluster_mixins):
         return cls(connection_pool=connection_pool)
 
     def __repr__(self):
-        servers = list({'{}:{}'.format(info['host'], info['port'])
-                        for info in self.connection_pool.nodes.startup_nodes})
-        servers.sort()
-        return '{}<{}>'.format(type(self).__name__, ', '.join(servers))
+        servers = sorted({
+            f'{info["host"]}:{info["port"]}'
+            for info in self.connection_pool.nodes.startup_nodes})
+        return f'{type(self).__name__}<{", ".join(servers)}>'
 
     def set_result_callback(self, command, callback):
         'Sets a custom Result Callback'
@@ -340,8 +340,9 @@ class StrictRedisCluster(StrictRedis, *cluster_mixins):
     def _determine_slot(self, *args):
         """Figures out what slot based on command and args"""
         if len(args) <= 1:
-            raise RedisClusterException(
-                'No way to dispatch this command to Redis Cluster. Missing key.')
+            raise RedisClusterException('No way to dispatch this command to '
+                                        'Redis Cluster. Missing key.')
+
         command = args[0]
 
         if command in ['EVAL', 'EVALSHA']:
@@ -357,9 +358,8 @@ class StrictRedisCluster(StrictRedis, *cluster_mixins):
             try:
                 idx = args.index('STREAMS') + 1
             except ValueError as e:
-                raise RedisClusterException(
-                    '{} arguments do not contain STREAMS operand'.format(
-                        command)) from e
+                raise RedisClusterException(f'{command} arguments do not '
+                                            'contain STREAMS operand') from e
             key = args[idx]
         elif command in ('XGROUP', 'XINFO'):
             key = args[2]
@@ -370,7 +370,9 @@ class StrictRedisCluster(StrictRedis, *cluster_mixins):
 
     def _merge_result(self, command, res, **kwargs):
         """
-        `res` is a dict with the following structure Dict(NodeName, CommandResult)
+        `res` is a dict with the following structure:
+
+            Dict(NodeName, CommandResult)
         """
         if command in self.result_callbacks:
             return self.result_callbacks[command](res, **kwargs)
@@ -398,8 +400,9 @@ class StrictRedisCluster(StrictRedis, *cluster_mixins):
             # `slot_id` should is assumed in kwargs
             slot = kwargs.get('slot_id')
             if not slot:
-                raise RedisClusterException('slot_id is needed to execute command {}'
-                                            .format(command))
+                raise RedisClusterException(
+                    f'slot_id is needed to execute command {command}')
+
             return [self.connection_pool.nodes.node_from_slot(slot)]
         return None
 

@@ -1,3 +1,4 @@
+# pylint: disable=no-self-use
 import asyncio
 import pickle
 import time
@@ -10,7 +11,8 @@ from yaaredis.exceptions import ConnectionError  # pylint: disable=redefined-bui
 from yaaredis.utils import b
 
 
-async def wait_for_message(pubsub, timeout=0.5, ignore_subscribe_messages=False):
+async def wait_for_message(pubsub, timeout=0.5,
+                           ignore_subscribe_messages=False):
     now = time.time()
     timeout = now + timeout
     while now < timeout:
@@ -25,19 +27,17 @@ async def wait_for_message(pubsub, timeout=0.5, ignore_subscribe_messages=False)
     return None
 
 
-def make_message(type, channel, data,  # pylint: disable=redefined-builtin
-                 pattern=None):
+def make_message(kind, channel, data, pattern=None):
     return {
-        'type': type,
+        'type': kind,
         'pattern': pattern and pattern.encode('utf-8') or None,
         'channel': channel.encode('utf-8'),
         'data': data.encode('utf-8') if isinstance(data, str) else data,
     }
 
 
-def make_subscribe_test_data(pubsub,
-                             type):  # pylint: disable=redefined-builtin
-    if type == 'channel':
+def make_subscribe_test_data(pubsub, kind):
+    if kind == 'channel':
         return {
             'p': pubsub,
             'sub_type': 'subscribe',
@@ -46,7 +46,7 @@ def make_subscribe_test_data(pubsub,
             'unsub_func': pubsub.unsubscribe,
             'keys': ['foo', 'bar', 'uni' + chr(56) + 'code'],
         }
-    if type == 'pattern':
+    if kind == 'pattern':
         return {
             'p': pubsub,
             'sub_type': 'psubscribe',
@@ -55,19 +55,20 @@ def make_subscribe_test_data(pubsub,
             'unsub_func': pubsub.punsubscribe,
             'keys': ['f*', 'b*', 'uni' + chr(56) + '*'],
         }
-    assert False, 'invalid subscribe type: %s' % type
+    assert False, f'invalid subscribe type: {kind}'
 
 
 class TestPubSubSubscribeUnsubscribe:
 
-    async def _test_subscribe_unsubscribe(self, p, sub_type, unsub_type, sub_func,
-                                          unsub_func, keys):
+    async def _test_subscribe_unsubscribe(self, p, sub_type, unsub_type,
+                                          sub_func, unsub_func, keys):
         for key in keys:
             assert await sub_func(key) is None
 
         # should be a message for each channel/pattern we just subscribed to
         for i, key in enumerate(keys):
-            assert await wait_for_message(p) == make_message(sub_type, key, i + 1)
+            assert await wait_for_message(p) == make_message(sub_type, key,
+                                                             i + 1)
 
         for key in keys:
             assert await unsub_func(key) is None
@@ -76,7 +77,8 @@ class TestPubSubSubscribeUnsubscribe:
         # from
         for i, key in enumerate(keys):
             i = len(keys) - 1 - i
-            assert await wait_for_message(p) == make_message(unsub_type, key, i)
+            assert await wait_for_message(p) == make_message(unsub_type, key,
+                                                             i)
 
     @pytest.mark.asyncio(forbid_global_loop=True)
     async def test_channel_subscribe_unsubscribe(self, r):

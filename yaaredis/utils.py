@@ -6,7 +6,8 @@ from .exceptions import RedisClusterException
 
 _C_EXTENSION_SPEEDUP = False
 try:
-    from .speedups import crc16, hash_slot  # pylint: disable=unused-import
+    from .speedups import crc16  # pylint: disable=no-name-in-module,unused-import
+    from .speedups import hash_slot  # pylint: disable=no-name-in-module,unused-import
 
     _C_EXTENSION_SPEEDUP = True
 except Exception:

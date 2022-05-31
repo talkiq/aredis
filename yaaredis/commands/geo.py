@@ -25,21 +25,22 @@ def parse_georadius_generic(response, **options):
         'withhash': int,
     }
 
-    # zip all output results with each casting functino to get
-    # the properly native Python value.
+    # zip all output results with each casting function to get the properly
+    # native Python value.
     f = [nativestr]
     f += [cast[o] for o in ['withdist', 'withhash', 'withcoord'] if options[o]]
     return [
-        list(map(lambda fv: fv[0](fv[1]), zip(f, r))) for r in response_list
+        [fn(x) for fn, x in zip(f, r)]
+        for r in response_list
     ]
 
 
 class GeoCommandMixin:
 
     RESPONSE_CALLBACKS = {
-        'GEOPOS': lambda r: list(map(lambda ll: (float(ll[0]),
-                                                 float(ll[1]))
-                                     if ll is not None else None, r)),
+        'GEOPOS': lambda xs: [(float(x[0]), float(x[1]))
+                              if x is not None else None
+                              for x in xs],
         'GEOHASH': list,
         'GEORADIUS': parse_georadius_generic,
         'GEORADIUSBYMEMBER': parse_georadius_generic,

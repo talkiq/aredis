@@ -221,8 +221,7 @@ class PythonParser(BaseParser):
         byte, response = chr(response[0]), response[1:]
 
         if byte not in ('-', '+', ':', '$', '*'):
-            raise InvalidResponse('Protocol Error: %s, %s' %
-                                  (str(byte), str(response)))
+            raise InvalidResponse(f'Protocol Error: {byte}, {response}')
 
         # server returned an error
         if byte == '-':
@@ -318,8 +317,9 @@ class HiredisParser(BaseParser):
         while response is False:
             try:
                 buffer = await self._stream.read(self._read_size)
-            # CancelledError will be caught by client so that command won't be retried again
-            # For more detailed discussion please see https://github.com/NoneGG/yaaredis/issues/56
+            # CancelledError will be caught by client so that command won't be
+            # retried again For more detailed discussion please see
+            # https://github.com/NoneGG/yaaredis/issues/56
             except yaaredis.compat.CancelledError:
                 raise
             except Exception as e:
@@ -356,8 +356,7 @@ class RedisSSLContext:
             }
             if cert_reqs not in CERT_REQS:
                 raise RedisError(
-                    'Invalid SSL Certificate Requirements Flag: %s' %
-                    cert_reqs)
+                    f'Invalid SSL Certificate Requirements Flag: {cert_reqs}')
             self.cert_reqs = CERT_REQS[cert_reqs]
         self.ca_certs = ca_certs
         self.context = None
@@ -504,8 +503,8 @@ class BaseConnection:
             else:
                 errno = e.args[0]
                 errmsg = e.args[1]
-            raise ConnectionError('Error %s while writing to socket. %s.' %
-                                  (errno, errmsg)) from e
+            raise ConnectionError(f'Error {errno} while writing to socket. '
+                                  f'{errmsg}.') from e
         except BaseException:
             self.disconnect()
             raise

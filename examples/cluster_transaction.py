@@ -32,7 +32,9 @@ async def run_func1():
         await cluster.transaction(func1, 'foobar', watch_delay=2)
     except Exception as exc:
         print(exc)
-    print('after transaction: `foobar` = {}'.format(await cluster.get('foobar')))
+
+    value = await cluster.get('foobar')
+    print(f'after transaction: `foobar` = {value}')
     print('wait for thread to end...')
     await asyncio.sleep(1)
 

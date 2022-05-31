@@ -1,4 +1,4 @@
-# pylint: disable=too-many-lines
+# pylint: disable=no-self-use,too-many-lines
 import binascii
 import datetime
 import time

@@ -5,7 +5,6 @@ from argparse import ArgumentParser
 from functools import wraps
 
 import uvloop
-
 import yaaredis
 
 if sys.version_info[0] >= 3:
@@ -68,10 +67,10 @@ async def set_str(conn, num, pipeline_size, data_size):
     if pipeline_size > 1:
         conn = await conn.pipeline()
 
-    format_str = '{:0<%d}' % data_size
+    format_str = f'{{:0<{data_size}}}'
     set_data = format_str.format('a')
     for i in range(num):
-        await conn.set('set_str:%d' % i, set_data)
+        await conn.set(f'set_str:{i}', set_data)
         if pipeline_size > 1 and i % pipeline_size == 0:
             await conn.execute()
 
@@ -85,10 +84,10 @@ async def set_int(conn, num, pipeline_size, data_size):
     if pipeline_size > 1:
         conn = await conn.pipeline()
 
-    format_str = '{:0<%d}' % data_size
+    format_str = f'{{:0<{data_size}}}'
     set_data = int(format_str.format('1'))
     for i in range(num):
-        await conn.set('set_int:%d' % i, set_data)
+        await conn.set(f'set_int:{i}', set_data)
         if pipeline_size > 1 and i % pipeline_size == 0:
             await conn.execute()
 
@@ -103,7 +102,7 @@ async def get_str(conn, num, pipeline_size):
         conn = await conn.pipeline()
 
     for i in range(num):
-        await conn.get('set_str:%d' % i)
+        await conn.get(f'set_str:{i}')
         if pipeline_size > 1 and i % pipeline_size == 0:
             await conn.execute()
 
@@ -118,7 +117,7 @@ async def get_int(conn, num, pipeline_size):
         conn = await conn.pipeline()
 
     for i in range(num):
-        await conn.get('set_int:%d' % i)
+        await conn.get(f'set_int:{i}')
         if pipeline_size > 1 and i % pipeline_size == 0:
             await conn.execute()
 
@@ -147,7 +146,7 @@ async def lpush(conn, num, pipeline_size, data_size):
     if pipeline_size > 1:
         conn = await conn.pipeline()
 
-    format_str = '{:0<%d}' % data_size
+    format_str = f'{{:0<{int(data_size)}}}'
     set_data = int(format_str.format('1'))
     for i in range(num):
         await conn.lpush('lpush_key', set_data)

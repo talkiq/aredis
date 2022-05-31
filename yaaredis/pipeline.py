@@ -247,8 +247,8 @@ class BasePipeline:
     @staticmethod
     def annotate_exception(exception, number, command):
         cmd = ' '.join(map(str, command))
-        msg = 'Command # %d (%s) of pipeline caused error: %s' % (
-            number, cmd, str(exception.args[0]))
+        msg = (f'Command # {number} ({cmd}) of pipeline caused '
+               f'error: {exception.args[0]}')
         exception.args = (msg,) + exception.args[1:]
 
     async def _parse(self, connection, command_name, **options):
@@ -409,8 +409,8 @@ class StrictClusterPipeline(StrictRedisCluster):
     @staticmethod
     def annotate_exception(exception, number, command):
         cmd = ' '.join(str(x) for x in command)
-        msg = 'Command # {} ({}) of pipeline caused error: {}'.format(
-            number, cmd, exception.args[0])
+        msg = (f'Command # {number} ({cmd}) of pipeline caused '
+               f'error: {exception.args[1:]}')
         exception.args = (msg,) + exception.args[1:]
 
     async def execute(self, raise_on_error=True):
@@ -655,8 +655,8 @@ def block_pipeline_command(func):
 
     def inner(*args, **kwargs):
         raise RedisClusterException(
-            'ERROR: Calling pipelined function {} is blocked when running redis in cluster mode...'.format(
-                func.__name__))
+            f'ERROR: Calling pipelined function {func.__name__} is blocked '
+            'when running redis in cluster mode...')
 
     return inner
 
