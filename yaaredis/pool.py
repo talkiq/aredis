@@ -100,7 +100,7 @@ class ConnectionPool:
                         url_options[name] = parser(value[0])
                     except (TypeError, ValueError) as e:
                         raise ConnectionError(
-                            'Invalid value for `%s` in connection URL.' % name,
+                            f'Invalid value for `{name}` in connection URL.',
                         ) from e
                 else:
                     url_options[name] = value[0]
@@ -183,10 +183,8 @@ class ConnectionPool:
         self.reset()
 
     def __repr__(self):
-        return '{}<{}>'.format(
-            type(self).__name__,
-            self.connection_class.description.format(**self.connection_kwargs),
-        )
+        x = self.connection_class.description.format(**self.connection_kwargs)
+        return f'{type(self).__name__}<{x}>'
 
     async def disconnect_on_idle_time_exceeded(self, connection):
         while True:
@@ -449,11 +447,9 @@ class ClusterConnectionPool(ConnectionPool):
         Returns a string with all unique ip:port combinations that this pool
         is connected to
         """
-        return '{}<{}>'.format(
-            type(self).__name__,
-            ', '.join([self.connection_class.description.format(**node)
-                       for node in self.nodes.startup_nodes]),
-        )
+        combs = ', '.join([self.connection_class.description.format(**node)
+                           for node in self.nodes.startup_nodes])
+        return f'{type(self).__name__}<{combs}>'
 
     async def initialize(self):
         if not self.initialized:
@@ -527,9 +523,10 @@ class ClusterConnectionPool(ConnectionPool):
         """Creates a new connection"""
         if self.count_all_num_connections(node) >= self.max_connections:
             if self.max_connections_per_node:
-                raise RedisClusterException('Too many connection ({}) for node: {}'
-                                            .format(self.count_all_num_connections(node),
-                                                    node['name']))
+                connections = self.count_all_num_connections(node)
+                raise RedisClusterException(
+                    f'Too many connection ({connections}) for '
+                    f'node: {node["name"]}')
 
             raise RedisClusterException('Too many connections')
 

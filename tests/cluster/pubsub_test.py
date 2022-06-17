@@ -1,3 +1,4 @@
+# pylint: disable=no-self-use
 import asyncio
 import time
 
@@ -8,7 +9,8 @@ from yaaredis import StrictRedisCluster
 from yaaredis.exceptions import ConnectionError  # pylint: disable=redefined-builtin
 
 
-async def wait_for_message(pubsub, timeout=0.5, ignore_subscribe_messages=False):
+async def wait_for_message(pubsub, timeout=0.5,
+                           ignore_subscribe_messages=False):
     now = time.time()
     timeout = now + timeout
     while now < timeout:
@@ -56,13 +58,15 @@ def make_subscribe_test_data(pubsub, kind):
 
 class TestPubSubSubscribeUnsubscribe:
 
-    async def _test_subscribe_unsubscribe(self, p, sub_type, unsub_type, sub_func, unsub_func, keys):
+    async def _test_subscribe_unsubscribe(self, p, sub_type, unsub_type,
+                                          sub_func, unsub_func, keys):
         for key in keys:
             assert await sub_func(key) is None
 
         # should be a message for each channel/pattern we just subscribed to
         for i, key in enumerate(keys):
-            assert await wait_for_message(p) == make_message(sub_type, key, i + 1)
+            assert await wait_for_message(p) == make_message(sub_type, key,
+                                                             i + 1)
 
         for key in keys:
             assert await unsub_func(key) is None
@@ -71,7 +75,8 @@ class TestPubSubSubscribeUnsubscribe:
         # from
         for i, key in enumerate(keys):
             i = len(keys) - 1 - i
-            assert await wait_for_message(p) == make_message(unsub_type, key, i)
+            assert await wait_for_message(p) == make_message(unsub_type, key,
+                                                             i)
 
     @pytest.mark.asyncio
     async def test_channel_subscribe_unsubscribe(self, r):

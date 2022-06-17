@@ -122,7 +122,8 @@ class PubSub:
         connection = self.connection
         await self._execute(connection, connection.send_command, *args)
 
-    async def _execute(self, connection, command, *args):
+    @staticmethod
+    async def _execute(connection, command, *args):
         try:
             return await command(*args)
         except CancelledError:
@@ -304,12 +305,12 @@ class PubSub:
     def run_in_thread(self, daemon=False, poll_timeout=1.0):
         for channel, handler in iter(self.channels.items()):
             if handler is None:
-                raise PubSubError("Channel: '{}' has no handler registered"
-                                  .format(channel))
+                raise PubSubError(f"Channel: '{channel}' has no handler "
+                                  'registered')
         for pattern, handler in iter(self.patterns.items()):
             if handler is None:
-                raise PubSubError("Pattern: '{}' has no handler registered"
-                                  .format(pattern))
+                raise PubSubError(f"Pattern: '{pattern}' has no handler "
+                                  'registered')
         thread = PubSubWorkerThread(self, daemon=daemon,
                                     poll_timeout=poll_timeout)
         thread.start()

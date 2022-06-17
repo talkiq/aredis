@@ -56,8 +56,8 @@ async def test_connection_creation():
     connection = pool.get_connection_by_node(
         {'host': '127.0.0.1', 'port': 7000})
     assert isinstance(connection, SampleConnection)
-    for key in connection_kwargs:
-        assert connection.kwargs[key] == connection_kwargs[key]
+    for key, value in connection_kwargs.items():
+        assert connection.kwargs[key] == value
 
 
 @pytest.mark.asyncio()

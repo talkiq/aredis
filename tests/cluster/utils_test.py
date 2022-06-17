@@ -118,7 +118,7 @@ def test_dict_merge():
 
 
 def test_dict_merge_empty_list():
-    assert dict_merge([]) == {}
+    assert not dict_merge([])
 
 
 def test_blocked_command():

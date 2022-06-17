@@ -15,7 +15,7 @@ _REDIS_VERSIONS = {}
 async def get_version(**kwargs):
     params = {'host': 'localhost', 'port': 6379, 'db': 0}
     params.update(kwargs)
-    key = '{}:{}'.format(params['host'], params['port'])
+    key = f'{params["host"]}:{params["port"]}'
     if key not in _REDIS_VERSIONS:
         client = yaaredis.StrictRedis(**params)
         _REDIS_VERSIONS[key] = (await client.info())['redis_version']

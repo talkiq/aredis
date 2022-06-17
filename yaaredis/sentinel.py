@@ -31,8 +31,7 @@ class SentinelManagedConnection(Connection):
             host_info = f',host={self.host},port={self.port}'
         else:
             host_info = ''
-        s = '{}<service={}{}>'.format(
-            type(self).__name__, pool.service_name, host_info)
+        s = f'{type(self).__name__}<service={pool.service_name}{host_info}>'
         return s
 
     async def connect_to(self, address):
@@ -93,11 +92,8 @@ class SentinelConnectionPool(ConnectionPool):
         self.sentinel_manager = sentinel_manager
 
     def __repr__(self):
-        return '{}<service={}({})'.format(
-            type(self).__name__,
-            self.service_name,
-            self.is_master and 'master' or 'slave',
-        )
+        kind = 'master' if self.is_master else 'slave'
+        return f'{type(self).__name__}<service={self.service_name}({kind})'
 
     def reset(self):
         super().reset()
@@ -132,7 +128,7 @@ class SentinelConnectionPool(ConnectionPool):
             return [await self.get_master_address()]
         except MasterNotFoundError:
             pass
-        raise SlaveNotFoundError('No slave found for %r' % (self.service_name))
+        raise SlaveNotFoundError(f'No slave found for {self.service_name}')
 
     def _checkpid(self):
         if self.pid != os.getpid():
@@ -192,13 +188,12 @@ class Sentinel:
     def __repr__(self):
         sentinel_addresses = []
         for sentinel in self.sentinels:
-            sentinel_addresses.append('{}:{}'.format(
+            sentinel_addresses.append(':'.join((
                 sentinel.connection_pool.connection_kwargs['host'],
                 sentinel.connection_pool.connection_kwargs['port'],
-            ))
-        return '{}<sentinels=[{}]>'.format(
-            type(self).__name__,
-            ','.join(sentinel_addresses))
+            )))
+        return (f'{type(self).__name__}'
+                f'<sentinels=[{",".join(sentinel_addresses)}]>')
 
     def check_master_state(self, state, service_name):
         if not state['is_master'] or state['is_sdown'] or state['is_odown']:

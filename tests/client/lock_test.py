@@ -1,4 +1,4 @@
-# pylint: disable=protected-access,unidiomatic-typecheck
+# pylint: disable=no-self-use,protected-access,unidiomatic-typecheck
 import time
 
 import pytest
