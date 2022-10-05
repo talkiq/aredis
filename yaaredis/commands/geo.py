@@ -145,6 +145,7 @@ class GeoCommandMixin:
                                             store_dist=store_dist)
 
     async def _georadiusgeneric(self, command, *args, **kwargs):
+        # pylint: disable=too-complex
         pieces = list(args)
         if kwargs['unit'] and kwargs['unit'] not in ('m', 'km', 'mi', 'ft'):
             raise RedisError('GEORADIUS invalid unit')

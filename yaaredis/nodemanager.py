@@ -110,7 +110,7 @@ class NodeManager:
         correctly covered all slots or when one node is reached and it could
         execute CLUSTER SLOTS command.
         """
-        # pylint: disable=too-many-locals,too-many-nested-blocks
+        # pylint: disable=too-many-locals,too-many-nested-blocks,too-complex
         # pylint: disable=too-many-branches,too-many-statements
         nodes_cache = {}
         tmp_slots = {}

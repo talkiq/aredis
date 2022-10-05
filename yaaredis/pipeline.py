@@ -154,7 +154,7 @@ class BasePipeline:
         return self
 
     async def _execute_transaction(self, connection, commands, raise_on_error):
-        # pylint: disable=too-many-locals,too-many-branches
+        # pylint: disable=too-many-locals,too-many-branches,too-complex
         cmds = chain([(('MULTI',), {})], commands, [(('EXEC',), {})])
         all_cmds = connection.pack_commands([args for args, _ in cmds])
         await connection.send_packed_command(all_cmds)
@@ -440,6 +440,7 @@ class StrictClusterPipeline(StrictRedisCluster):
 
     @clusterdown_wrapper
     async def send_cluster_transaction(self, stack, raise_on_error=True):
+        # pylint: disable=too-complex
         # the first time sending the commands we send all of the commands that were queued up.
         # if we have to run through it again, we only retry the commands that failed.
         attempt = sorted(stack, key=lambda x: x.position)
@@ -498,6 +499,7 @@ class StrictClusterPipeline(StrictRedisCluster):
         `allow_redirections` If the pipeline should follow `ASK` & `MOVED` responses
         automatically. If set to false it will raise RedisClusterException.
         """
+        # pylint: disable=too-complex
         # the first time sending the commands we send all of the commands that were queued up.
         # if we have to run through it again, we only retry the commands that failed.
         attempt = sorted(stack, key=lambda x: x.position)

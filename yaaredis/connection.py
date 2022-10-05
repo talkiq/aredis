@@ -211,7 +211,7 @@ class PythonParser(BaseParser):
         return self._buffer and bool(self._buffer.length)
 
     async def read_response(self):
-        # pylint: disable=too-many-branches
+        # pylint: disable=too-many-branches,too-complex
         if not self._buffer:
             raise ConnectionError('Socket closed on remote end')
         response = await self._buffer.readline()

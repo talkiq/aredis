@@ -86,7 +86,7 @@ class ConnectionPool:
         Invalid types cause a ``UserWarning`` to be raised.
         In the case of conflicting arguments, querystring arguments always win.
         """
-        # pylint: disable=too-many-locals
+        # pylint: disable=too-many-locals,too-complex
         url = urlparse(url)
         qs = url.query
 

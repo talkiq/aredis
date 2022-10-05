@@ -83,6 +83,7 @@ class IterCommandMixin:
 class ClusterIterCommandMixin(IterCommandMixin):
     async def scan_iter(self, match=None, count=None,
                         type=None):  # pylint: disable=redefined-builtin
+        # pylint: disable=too-complex
         nodes = await self.cluster_nodes()
 
         async def iterate_node(node, queue):

@@ -182,6 +182,7 @@ class KeysCommandMixin:
             values fetched from the arguments to ``get``.
 
         """
+        # pylint: disable=too-complex
         if ((start is not None and num is None)
                 or (num is not None and start is None)):
             raise RedisError('``start`` and ``num`` must both be specified')

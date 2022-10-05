@@ -411,7 +411,7 @@ class StrictRedisCluster(StrictRedis, *cluster_mixins):
         """
         Sends a command to a node in the cluster
         """
-        # pylint: disable=too-many-branches,too-many-statements
+        # pylint: disable=too-many-branches,too-many-statements,too-complex
         if not self.connection_pool.initialized:
             await self.connection_pool.initialize()
         if not args:
