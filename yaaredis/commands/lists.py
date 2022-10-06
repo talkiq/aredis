@@ -247,7 +247,7 @@ class ClusterListsCommandMixin(ListsCommandMixin):
             many of the options work on multiple keys that can exist on
             multiple servers.
         """
-        # pylint: disable=too-many-branches
+        # pylint: disable=too-many-branches,too-complex
         if ((start is None and num is not None)
                 or (start is not None and num is None)):
             raise RedisError(

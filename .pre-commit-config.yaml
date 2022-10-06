@@ -40,8 +40,9 @@ repos:
         - git+https://github.com/bayesimpact/pylint_import_modules@016f79e4d2
         args:
         - --allowed-direct-imports="typing.*"
-        - --load-plugins=pylint_import_modules
+        - --load-plugins=pylint_import_modules,pylint.extensions.mccabe
         # - --max-line-length=79  # TODO: enable me
+        - --max-complexity=10
         - --max-line-length=179
         - --max-args=10
         - --score=n
@@ -116,6 +117,7 @@ repos:
         - flake8-commas==2.1.0
         - flake8-comprehensions==3.10.0
         - flake8-typing-imports==1.12.0
+        - importlib-metadata<5
         args:
         # TODO: C406 should be ignored inline, but yesqa keeps stripping it out
         - --ignore=A001,A002,A003,C406,E501,W503,F401,F811
