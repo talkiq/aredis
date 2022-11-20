@@ -1,7 +1,7 @@
 version: 2.1
 
 orbs:
-  linter: talkiq/linter@1
+  linter: talkiq/linter@2
   poetry: talkiq/poetry@1
 
 jobs:
