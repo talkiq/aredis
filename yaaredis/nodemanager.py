@@ -98,7 +98,8 @@ class NodeManager:
         connection_kwargs = {
             k: v for k, v in self.connection_kwargs.items() if k in allowed_keys}
         from .client import StrictRedis  # pylint: disable=import-outside-toplevel
-        return StrictRedis(host=host, port=port, decode_responses=True, **connection_kwargs)
+        return StrictRedis(host=host, port=port,
+                           decode_responses=True, **connection_kwargs)
 
     async def initialize(self):
         """

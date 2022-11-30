@@ -71,11 +71,13 @@ class ClusterHyperLogCommandMixin(HyperLogCommandMixin):
             all_k.append(k)
             await self.set(k, hll_object)
 
-        # Do regular PFMERGE operation and store value in random key in {RandomHash}
+        # Do regular PFMERGE operation and store value in random key in
+        # {RandomHash}
         tmp_dest = self._random_good_hashslot_key(random_hash_slot)
         await self.execute_command('PFMERGE', tmp_dest, *all_k)
 
-        # Do GET and SET so that result will be stored in the destination object any where in the cluster
+        # Do GET and SET so that result will be stored in the destination
+        # object any where in the cluster
         parsed_dest = await self.get(tmp_dest)
         await self.set(dest, parsed_dest)
 

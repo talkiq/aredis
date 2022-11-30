@@ -10,7 +10,8 @@ from yaaredis import __version__
 from yaaredis import StrictRedis
 from yaaredis import StrictRedisCluster
 
-# put our path in front so we can be sure we are testing locally not against the global package
+# put our path in front so we can be sure we are testing locally not
+# against the global package
 basepath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(1, basepath)
 
@@ -52,7 +53,8 @@ def _init_mgt_client(request, cls=None, **kwargs):
 
 
 def skip_if_not_password_protected_nodes():
-    return pytest.mark.skipif('TEST_PASSWORD_PROTECTED' not in os.environ, reason='')
+    return pytest.mark.skipif(
+        'TEST_PASSWORD_PROTECTED' not in os.environ, reason='')
 
 
 def skip_if_server_version_lt(min_version):

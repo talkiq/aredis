@@ -215,7 +215,8 @@ class BasePipeline:
                     r = callback(r, **options)
                     # typing.Awaitable is not available in Python3.5
                     # so use inspect.isawaitable instead
-                    # according to issue https://github.com/NoneGG/aredis/issues/77
+                    # according to issue
+                    # https://github.com/NoneGG/aredis/issues/77
                     if inspect.isawaitable(response):
                         r = await r
             data.append(r)
@@ -442,12 +443,14 @@ class StrictClusterPipeline(StrictRedisCluster):
     async def send_cluster_transaction(self, stack, raise_on_error=True):
         # pylint: disable=too-complex
         # the first time sending the commands we send all of the commands that were queued up.
-        # if we have to run through it again, we only retry the commands that failed.
+        # if we have to run through it again, we only retry the commands that
+        # failed.
         attempt = sorted(stack, key=lambda x: x.position)
         node = {}
 
         # as we move through each command that still needs to be processed,
-        # we figure out the slot number that command maps to, then from the slot determine the node.
+        # we figure out the slot number that command maps to, then from the
+        # slot determine the node.
         for c in attempt:
             # refer to our internal node -> slot table that tells us where a given
             # command should route to.
@@ -457,7 +460,8 @@ class StrictClusterPipeline(StrictRedisCluster):
             # now that we know the name of the node ( it's just a string in the form of host:port )
             # we can build a list of commands for each node.
             if node.get('name') != hashed_node['name']:
-                # raise error if commands in a transaction can not hash to same node
+                # raise error if commands in a transaction can not hash to same
+                # node
                 if len(node) > 0:
                     raise ClusterTransactionError(
                         "Keys in request don't hash to the same node")
@@ -501,21 +505,24 @@ class StrictClusterPipeline(StrictRedisCluster):
         """
         # pylint: disable=too-complex
         # the first time sending the commands we send all of the commands that were queued up.
-        # if we have to run through it again, we only retry the commands that failed.
+        # if we have to run through it again, we only retry the commands that
+        # failed.
         attempt = sorted(stack, key=lambda x: x.position)
 
         # build a list of node objects based on node names we need to
         nodes = {}
 
         # as we move through each command that still needs to be processed,
-        # we figure out the slot number that command maps to, then from the slot determine the node.
+        # we figure out the slot number that command maps to, then from the
+        # slot determine the node.
         for c in attempt:
             # refer to our internal node -> slot table that tells us where a given
             # command should route to.
             slot = self._determine_slot(*c.args)
             node = self.connection_pool.get_node_by_slot(slot)
 
-            # little hack to make sure the node name is populated. probably could clean this up.
+            # little hack to make sure the node name is populated. probably
+            # could clean this up.
             self.connection_pool.nodes.set_node_name(node)
 
             # now that we know the name of the node ( it's just a string in the form of host:port )
@@ -531,7 +538,8 @@ class StrictClusterPipeline(StrictRedisCluster):
         # we  write to all the open sockets for each node first, before reading anything
         # this allows us to flush all the requests out across the network essentially in parallel
         # so that we can read them all in parallel as they come back.
-        # we dont' multiplex on the sockets as they come available, but that shouldn't make too much difference.
+        # we dont' multiplex on the sockets as they come available, but that
+        # shouldn't make too much difference.
         node_commands = nodes.values()
         for n in node_commands:
             await n.write()
@@ -549,7 +557,8 @@ class StrictClusterPipeline(StrictRedisCluster):
         # the socket might have unread buffer still sitting in it, and then the
         # next time we read from it we pass the buffered result back from a previous
         # command and every single request after to that connection will always get
-        # a mismatched result. (not just theoretical, I saw this happen on production x.x).
+        # a mismatched result. (not just theoretical, I saw this happen on
+        # production x.x).
         for n in nodes.values():
             self.connection_pool.release(n.connection)
 
@@ -579,7 +588,8 @@ class StrictClusterPipeline(StrictRedisCluster):
             await self.connection_pool.nodes.increment_reinitialize_counter(len(attempt))
             for c in attempt:
                 try:
-                    # send each command individually like we do in the main client.
+                    # send each command individually like we do in the main
+                    # client.
                     c.result = await super().execute_command(*c.args, **c.options)
                 except RedisError as e:
                     c.result = e
@@ -618,7 +628,8 @@ class StrictClusterPipeline(StrictRedisCluster):
             slot = self._determine_slot('WATCH', name)
             dist_node = self.connection_pool.get_node_by_slot(slot)
             if node.get('name') != dist_node['name']:
-                # raise error if commands in a transaction can not hash to same node
+                # raise error if commands in a transaction can not hash to same
+                # node
                 if len(node) > 0:
                     raise ClusterTransactionError(
                         "Keys in request don't hash to the same node")

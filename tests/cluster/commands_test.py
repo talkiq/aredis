@@ -278,7 +278,8 @@ async def test_expire(r):
     assert await r.expire('a', 10)
     assert 0 < await r.ttl('a') <= 10
     assert await r.persist('a')
-    # the ttl command changes behavior in redis-2.8+ http://redis.io/commands/ttl
+    # the ttl command changes behavior in redis-2.8+
+    # http://redis.io/commands/ttl
     assert await r.ttl('a') == -1
 
 
@@ -487,7 +488,8 @@ async def test_pexpire(r):
     assert 0 < await r.pttl('a') <= 60000
     assert await r.persist('a')
     # redis-py tests seemed to be for older version of redis?
-    # redis-2.8+ returns -1 if key exists but is non-expiring: http://redis.io/commands/pttl
+    # redis-2.8+ returns -1 if key exists but is non-expiring:
+    # http://redis.io/commands/pttl
     assert await r.pttl('a') == -1
 
 

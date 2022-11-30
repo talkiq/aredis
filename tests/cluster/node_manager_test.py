@@ -54,7 +54,8 @@ async def test_init_slots_cache_not_all_slots(s):
     """
     Test that if not all slots are covered it should raise an exception
     """
-    # Create wrapper function so we can inject custom 'CLUSTER SLOTS' command result
+    # Create wrapper function so we can inject custom 'CLUSTER SLOTS' command
+    # result
     def get_redis_link_wrapper(*args, **kwargs):
         link = StrictRedis(host='127.0.0.1', port=7000)
 
@@ -93,7 +94,8 @@ async def test_init_slots_cache_not_all_slots_not_require_full_coverage(s):
     """
     Test that if not all slots are covered it should raise an exception
     """
-    # Create wrapper function so we can inject custom 'CLUSTER SLOTS' command result
+    # Create wrapper function so we can inject custom 'CLUSTER SLOTS' command
+    # result
     def get_redis_link_wrapper(*args, **kwargs):
         link = StrictRedis(host='127.0.0.1', port=7000, decode_responses=True)
 
@@ -389,7 +391,8 @@ async def test_init_with_down_node():
     def get_redis_link(host, port, decode_responses=False):
         if port == 7000:
             raise ConnectionError('mock connection error for 7000')
-        return StrictRedis(host=host, port=port, decode_responses=decode_responses)
+        return StrictRedis(host=host, port=port,
+                           decode_responses=decode_responses)
 
     with patch.object(NodeManager, 'get_redis_link', side_effect=get_redis_link):
         n = NodeManager(startup_nodes=[{'host': '127.0.0.1', 'port': 7000}])

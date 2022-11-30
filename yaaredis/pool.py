@@ -561,7 +561,8 @@ class ClusterConnectionPool(ConnectionPool):
         # discard connection with unread response
         if connection.awaiting_response:
             connection.disconnect()
-            # reduce node connection count in case of too many connections error raised
+            # reduce node connection count in case of too many connections
+            # error raised
             if self._created_connections_per_node.get(connection.node['name']):
                 self._created_connections_per_node[connection.node['name']] -= 1
         else:

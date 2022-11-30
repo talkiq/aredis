@@ -134,6 +134,8 @@ class SentinelConnectionPool(ConnectionPool):
         if self.pid != os.getpid():
             self.disconnect()
             self.reset()
+            # TODO: wtf?
+            # pylint: disable=unnecessary-dunder-call
             self.__init__(self.service_name, self.sentinel_manager,
                           is_master=self.is_master,
                           check_connection=self.check_connection,

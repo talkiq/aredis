@@ -202,7 +202,8 @@ class ClusterCommandMixin:
 
         Sends to specefied node
         """
-        if not isinstance(option, str) or option.upper() not in {'FORCE', 'TAKEOVER'}:
+        if not isinstance(option, str) or option.upper() not in {
+                'FORCE', 'TAKEOVER'}:
             raise ClusterError('Wrong option provided')
         return await self.execute_command('CLUSTER FAILOVER', option, node_id=node_id)
 
@@ -307,7 +308,8 @@ class ClusterCommandMixin:
 
         Sends to specified node
         """
-        if state.upper() in {'IMPORTING', 'MIGRATING', 'NODE'} and node_id is not None:
+        if state.upper() in {'IMPORTING', 'MIGRATING',
+                             'NODE'} and node_id is not None:
             return await self.execute_command('CLUSTER SETSLOT', slot_id, state, node_id)
         if state.upper() == 'STABLE':
             return await self.execute_command('CLUSTER SETSLOT', slot_id, 'STABLE')

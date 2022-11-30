@@ -34,7 +34,8 @@ async def example_cluster():
 
 
 if __name__ == '__main__':
-    # initial redis client synchronously, which enable client to be intitialized out of function
+    # initial redis client synchronously, which enable client to be
+    # intitialized out of function
     loop = asyncio.get_event_loop()
     loop.run_until_complete(example_client())
     # loop.run_until_complete(example_cluster())

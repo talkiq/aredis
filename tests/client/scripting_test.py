@@ -1,4 +1,3 @@
-# pylint: disable=no-self-use
 import pytest
 
 from yaaredis.exceptions import NoScriptError

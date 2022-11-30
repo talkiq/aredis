@@ -1,4 +1,4 @@
-# pylint: disable=no-self-use,protected-access,unidiomatic-typecheck
+# pylint: disable=protected-access,unidiomatic-typecheck
 import time
 
 import pytest
@@ -146,16 +146,16 @@ class TestLockClassSelection:
     @pytest.mark.asyncio()
     async def test_lock_class_argument(self, r):
         lock = r.lock('foo', lock_class=Lock)
-        assert type(lock) == Lock
+        assert isinstance(lock, Lock)
         lock = r.lock('foo', lock_class=LuaLock)
-        assert type(lock) == LuaLock
+        assert isinstance(lock, LuaLock)
 
     @pytest.mark.asyncio()
     async def test_cached_lualock_flag(self, r):
         try:
             r._use_lua_lock = True
             lock = r.lock('foo')
-            assert type(lock) == LuaLock
+            assert isinstance(lock, LuaLock)
         finally:
             r._use_lua_lock = None
 
@@ -164,7 +164,7 @@ class TestLockClassSelection:
         try:
             r._use_lua_lock = False
             lock = r.lock('foo')
-            assert type(lock) == Lock
+            assert isinstance(lock, Lock)
         finally:
             r._use_lua_lock = None
 
@@ -177,7 +177,7 @@ class TestLockClassSelection:
         monkeypatch.setattr(LuaLock, 'register_scripts', mock_register)
         try:
             lock = r.lock('foo')
-            assert type(lock) == LuaLock
+            assert isinstance(lock, LuaLock)
             assert r._use_lua_lock is True
         finally:
             r._use_lua_lock = None
@@ -191,7 +191,7 @@ class TestLockClassSelection:
         monkeypatch.setattr(LuaLock, 'register_scripts', mock_register)
         try:
             lock = r.lock('foo')
-            assert type(lock) == Lock
+            assert isinstance(lock, Lock)
             assert r._use_lua_lock is False
         finally:
             r._use_lua_lock = None

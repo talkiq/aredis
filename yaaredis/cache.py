@@ -123,7 +123,8 @@ class BasicCache:
                  encoding='utf-8'):
         self.client = client
         self.identity_generator = self.compressor = self.serializer = None
-        # set identity generator, compressor and serializer to None if not needed
+        # set identity generator, compressor and serializer to None if not
+        # needed
         if identity_generator_class:
             self.identity_generator = identity_generator_class(app, encoding)
         if compressor_class:
