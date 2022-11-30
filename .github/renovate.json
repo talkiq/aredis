@@ -2,10 +2,10 @@
   "assignees": ["TheKevJames"],
   "extends": ["github>thekevjames/tools"],
   "packageRules": [{
-    "manager": ["poetry"],
+    "paths": ["pyproject.toml"],
     "rangeStrategy": "widen"
   }, {
-    "manager": ["poetry"],
+    "paths": ["pyproject.toml"],
     "depTypeList": ["devDependencies"],
     "rangeStrategy": "pin"
   }]
