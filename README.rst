@@ -1,12 +1,13 @@
-.. warning::
+This Library Is Deprecated
+==========================
 
-    Since this library was created, the official ``redis-py`` library has
-    gained all the functionality added here (namely: asyncio support, cluster
-    support, and a few bugfixes). We now heavily recommend using the official
-    library and will no longer be maintaining yaaredis.
+Since this library was created, the official ``redis-py`` library has
+gained all the functionality added here (namely: asyncio support, cluster
+support, and a few bugfixes). We now heavily recommend using the official
+library and will no longer be maintaining yaaredis.
 
-    ``redis-py`` can be found on `Github <https://github.com/redis/redis-py>`_
-    and is available as ``pip install redis``.
+``redis-py`` can be found on `Github <https://github.com/redis/redis-py>`_
+and is available as ``pip install redis``.
 
 talkiq/yaaredis
 ===============
